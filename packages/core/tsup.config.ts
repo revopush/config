@@ -1,7 +1,7 @@
 import { defineConfig } from "tsup";
 
 export default defineConfig({
-  entry: ["src/index.ts"], // Later tasks add src/testing/index.ts and src/codegen/cli.ts
+  entry: ["src/index.ts", "src/codegen/cli.ts"], // Task 10 adds src/testing/index.ts
   format: ["esm", "cjs"],
   dts: true,
   clean: true,
