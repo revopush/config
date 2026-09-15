@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { emitTypes } from "./emit";
@@ -73,14 +72,4 @@ export async function runTypes(argv: string[], io: CliIO = console): Promise<num
   fs.writeFileSync(out, expected);
   io.log(`Wrote ${out}.`);
   return 0;
-}
-
-const invokedDirectly = process.argv[1] && /codegen[/\\]cli\.(c?js|ts)$/.test(process.argv[1]);
-if (invokedDirectly) {
-  const [, , command, ...rest] = process.argv;
-  if (command !== "types") {
-    console.error(USAGE);
-    process.exit(1);
-  }
-  runTypes(rest).then((code) => process.exit(code));
 }
