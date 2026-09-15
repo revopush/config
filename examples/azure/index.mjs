@@ -1,4 +1,5 @@
 import { createConfig, fileLayers, env } from "@revopush/config";
+import assert from "node:assert/strict";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -22,6 +23,6 @@ const config = createConfig({
 });
 await config.init();
 
-console.assert(config.get("secret.storageKey") === "value-of-storage-demoaccount", "template should interpolate");
-console.assert(!JSON.stringify(config.toJSON()).includes("value-of"), "toJSON must redact secrets");
+assert(config.get("secret.storageKey") === "value-of-storage-demoaccount", "template should interpolate");
+assert(!JSON.stringify(config.toJSON()).includes("value-of"), "toJSON must redact secrets");
 console.log("azure:", config.toJSON());

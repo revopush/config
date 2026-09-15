@@ -1,4 +1,5 @@
 import { createConfig, env, fileLayers } from "@revopush/config";
+import assert from "node:assert/strict";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,6 +11,6 @@ const config = createConfig({
 });
 await config.init();
 
-console.assert(config.get("endpoint") === "https://eu.prod.example.test", "region layer should win");
-console.assert(config.get("service") === "demo-prod", "environment layer should still apply");
+assert(config.get("endpoint") === "https://eu.prod.example.test", "region layer should win");
+assert(config.get("service") === "demo-prod", "environment layer should still apply");
 console.log("layered:", config.explain("endpoint"));
