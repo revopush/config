@@ -43,7 +43,7 @@ function merge(target: SourceValues, source: SourceValues): SourceValues {
 export function fileLayers(options: FileLayersOptions = {}): Source {
   return {
     name: options.name ?? "files",
-    async load(context: SourceContext): Promise<SourceValues> {
+    load(context: SourceContext): SourceValues {
       const dir = options.dir ?? context.dir;
       if (!dir) {
         throw new ConfigError(

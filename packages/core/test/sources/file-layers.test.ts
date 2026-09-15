@@ -52,7 +52,7 @@ describe("fileLayers source", () => {
     expect((values.redis as Record<string, unknown>).host).to.equal("prod-redis");
   });
 
-  it("fails clearly when no directory is available at all", async () => {
-    await expect(fileLayers({ environment: "production" }).load(context(undefined))).rejects.toThrow(ConfigError);
+  it("fails clearly when no directory is available at all", () => {
+    expect(() => fileLayers({ environment: "production" }).load(context(undefined))).toThrow(ConfigError);
   });
 });
