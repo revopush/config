@@ -43,4 +43,12 @@ describe("getPath and setPath", () => {
     setPath(target, "a.b.c", 7);
     expect(target).to.deep.equal({ a: { b: { c: 7 } } });
   });
+
+  // Layer merging relies on this: an intermediate primitive from an earlier layer is silently
+  // replaced by an object rather than causing a write failure.
+  it("silently overwrites a non-object intermediate segment", () => {
+    const target: Record<string, unknown> = { a: 1 };
+    setPath(target, "a.b", 2);
+    expect(target).to.deep.equal({ a: { b: 2 } });
+  });
 });

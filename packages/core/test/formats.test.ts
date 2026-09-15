@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import convict from "convict";
 import { registerFormats, STRICT_BOOLEAN } from "../src/formats";
 
@@ -26,7 +26,13 @@ describe("strict-boolean", () => {
     expect(() => resolve("maybe")).toThrow(/must be one of/);
   });
 
-  it("is idempotent, so importing the module twice does not throw", () => {
+  it("is idempotent: re-registering does not call convict.addFormat again", () => {
+    // The module-level registerFormats() above already ran, so the guard should make every
+    // further call a no-op. If the `registered` guard were removed, each call below would
+    // re-invoke convict.addFormat and this spy would observe it.
+    const addFormat = vi.spyOn(convict, "addFormat");
     expect(() => { registerFormats(); registerFormats(); }).to.not.throw();
+    expect(addFormat).not.toHaveBeenCalled();
+    addFormat.mockRestore();
   });
 });

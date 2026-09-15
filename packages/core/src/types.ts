@@ -70,6 +70,7 @@ export interface Config<K = Record<string, any>> extends ReadonlyConfig<K> {
   init(): Promise<void>;
 }
 
+/** Options for `createConfig`. */
 export interface CreateConfigOptions {
   /** Directory holding `schema.json` and the layer files. Mutually exclusive with `schema`. */
   schemaDir?: string;

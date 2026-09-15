@@ -1,5 +1,6 @@
 import { Schema, SchemaEntry } from "./types";
 
+/** A schema leaf found by `leaves()`: its dotted path and the entry at that path. */
 export interface SchemaLeaf {
   path: string;
   entry: SchemaEntry;
