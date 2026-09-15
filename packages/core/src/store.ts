@@ -11,6 +11,13 @@ interface Layer {
 }
 
 /**
+ * Matches convict's message for a key that is not in the schema, which reads
+ * `configuration param 'redis.hsot' not declared in the schema` — a different shape from the
+ * `key: reason` lines convict emits for every other kind of validation failure.
+ */
+const UNKNOWN_PARAM = /^configuration param '([^']+)'/;
+
+/**
  * Holds the merged configuration and remembers where every value came from.
  *
  * convict validates and coerces; this class owns layering and provenance, which is what lets
@@ -65,7 +72,11 @@ export class Store {
       const detail = error instanceof Error ? error.message : String(error);
       const keys = detail
         .split("\n")
-        .map((line) => line.trim().split(":")[0]?.trim())
+        .map((line) => {
+          const trimmed = line.trim();
+          const unknown = UNKNOWN_PARAM.exec(trimmed);
+          return unknown ? unknown[1] : trimmed.split(":")[0]?.trim();
+        })
         .filter((key): key is string => Boolean(key));
       throw new ConfigValidationError([...new Set(keys)], detail);
     }

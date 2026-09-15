@@ -48,6 +48,32 @@ describe("Store", () => {
     expect(() => store.validate()).toThrow(ConfigValidationError);
   });
 
+  // convict formats an unknown-param problem as a sentence, not as "key: reason" like every
+  // other validation failure, so the key extraction needs a separate case for it.
+  it("names the offending key for an unknown key, not the whole convict sentence", () => {
+    const store = new Store(schema);
+    store.merge("file", { redis: { hsot: "typo" } });
+    try {
+      store.validate();
+      expect.fail("validate() should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigValidationError);
+      expect((error as ConfigValidationError).keys).to.deep.equal(["redis.hsot"]);
+    }
+  });
+
+  it("collects both an unknown key and a format error together", () => {
+    const store = new Store(schema);
+    store.merge("file", { redis: { hsot: "typo", port: "not-a-port" } });
+    try {
+      store.validate();
+      expect.fail("validate() should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigValidationError);
+      expect((error as ConfigValidationError).keys.sort()).to.deep.equal(["redis.hsot", "redis.port"]);
+    }
+  });
+
   it("collects every rejected key rather than only the first", () => {
     const store = new Store(schema);
     store.merge("file", { redis: { port: "not-a-port" }, api: { https: "maybe" } });
