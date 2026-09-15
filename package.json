@@ -5,7 +5,7 @@
   "workspaces": ["packages/*", "examples/*"],
   "engines": { "node": ">=20" },
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @revopush/config && npm run build -w @revopush/config-azure-keyvault",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "changeset": "changeset",
