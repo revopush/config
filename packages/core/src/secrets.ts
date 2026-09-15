@@ -1,3 +1,4 @@
+import { ConfigError } from "./errors";
 import { SECRET_PREFIX } from "./constants";
 import { leaves } from "./schema-walk";
 import { Schema } from "./types";
@@ -15,6 +16,8 @@ function kebab(name: string): string {
  * may override that with `secretName`, whose `{config.key}` placeholders resolve against values
  * merged so far — which is how a name built from another setting, such as a per-account storage
  * key, is expressed without code.
+ *
+ * Throws `ConfigError` if a placeholder in a `secretName` template resolves to `undefined`, `null`, or an empty string.
  */
 export function secretNames(
   schema: Schema,
@@ -28,7 +31,18 @@ export function secretNames(
     const entry = entries.get(key);
     if (!entry) continue;
     const template = entry.secretName ?? kebab(key.slice(SECRET_PREFIX.length));
-    names.set(key, template.replace(PLACEHOLDER, (_, placeholder: string) => String(read(placeholder) ?? "")));
+    names.set(
+      key,
+      template.replace(PLACEHOLDER, (_, placeholder: string) => {
+        const value = read(placeholder);
+        if (value === undefined || value === null || value === "") {
+          throw new ConfigError(
+            `Secret "${key}" has secretName "${template}", but "${placeholder}" resolved to nothing.`
+          );
+        }
+        return String(value);
+      })
+    );
   }
 
   return names;

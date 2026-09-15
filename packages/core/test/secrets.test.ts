@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ConfigError } from "../src/errors";
 import { secretNames } from "../src/secrets";
 
 const schema = {
@@ -48,5 +49,21 @@ describe("secretNames", () => {
 
   it("ignores a declared key that is not in the schema", () => {
     expect(secretNames(schema, ["secret.ghost"], read).size).to.equal(0);
+  });
+
+  // A truncated name like "storage-" would read as "the store does not hold this secret" and silently fall back to an environment variable.
+  it("throws when a placeholder resolves to undefined", () => {
+    const badRead = () => undefined;
+    expect(() => secretNames(schema, ["secret.storageKey"], badRead)).toThrowError(
+      /Secret "secret.storageKey" has secretName "storage-\{azure.storageAccount\}", but "azure.storageAccount" resolved to nothing\./
+    );
+  });
+
+  // An empty value is as wrong as a missing one in a template — it silently produces a truncated name.
+  it("throws when a placeholder resolves to an empty string", () => {
+    const emptyRead = (key: string) => (key === "azure.storageAccount" ? "" : undefined);
+    expect(() => secretNames(schema, ["secret.storageKey"], emptyRead)).toThrowError(
+      /Secret "secret.storageKey" has secretName "storage-\{azure.storageAccount\}", but "azure.storageAccount" resolved to nothing\./
+    );
   });
 });
