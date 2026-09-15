@@ -1,6 +1,7 @@
 import { leaves, setPath } from "../schema-walk";
 import { Source, SourceContext, SourceValues } from "../types";
 
+/** Configures where the env source reads from and how it identifies itself in provenance. */
 export interface EnvOptions {
   /** The environment to read. Defaults to `process.env`. */
   from?: Record<string, string | undefined>;
