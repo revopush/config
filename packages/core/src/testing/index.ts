@@ -47,11 +47,23 @@ export function testSecretSource(factory: (fixtures: SecretFixtures) => SecretSo
   });
 }
 
+function deepFreeze<T>(value: T): T {
+  if (value && typeof value === "object") Object.values(value).forEach(deepFreeze);
+  return Object.freeze(value);
+}
+
 /**
  * Verifies a `Source` against the contract. Call inside a `describe`.
  */
 export function testSource(factory: () => Source): void {
-  const context: SourceContext = { schema: {}, get: () => undefined, warn: () => {} };
+  const context: SourceContext = {
+    schema: deepFreeze({
+      a: { doc: "example", format: "string", default: "value", env: "EXAMPLE" },
+      b: { doc: "another", format: "number", default: 42 },
+    }),
+    get: () => undefined,
+    warn: () => {},
+  };
 
   it("has a name", () => {
     expect(factory().name).to.be.a("string").and.not.equal("");
@@ -63,9 +75,12 @@ export function testSource(factory: () => Source): void {
     expect(Array.isArray(values)).to.equal(false);
   });
 
-  it("does not mutate the context", async () => {
+  it("does not mutate the context by attempting writes to the frozen schema", async () => {
     const source = factory();
     await source.load(context);
-    expect(context.schema).to.deep.equal({});
+    expect(context.schema).to.deep.equal({
+      a: { doc: "example", format: "string", default: "value", env: "EXAMPLE" },
+      b: { doc: "another", format: "number", default: 42 },
+    });
   });
 }

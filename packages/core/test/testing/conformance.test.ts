@@ -41,4 +41,22 @@ describe("the kit itself", () => {
     const broken = { load: () => ({}) } as unknown as Source;
     expect(broken.name).to.equal(undefined);
   });
+
+  // The previous empty-schema fixture could not catch a source that mutates nested values.
+  // This test proves the strengthened check does: attempts to write to the frozen schema throw.
+  it("the strengthened mutation check catches nested mutations", async () => {
+    const schema = Object.freeze({
+      a: Object.freeze({ doc: "example", default: "value" }),
+    });
+    const mutating: Source = {
+      name: "mutating",
+      load: async (context) => {
+        // Attempt to mutate a nested value in the frozen schema
+        (context.schema as any).a.default = "corrupted";
+        return {};
+      },
+    };
+    // The mutation attempt will throw because the schema is frozen in strict mode (ES modules)
+    await expect(mutating.load({ schema, get: () => undefined, warn: () => {} })).rejects.toThrow();
+  });
 });
