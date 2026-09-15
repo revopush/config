@@ -60,6 +60,9 @@ for the vault round trip twice.
 
 ## Documentation
 
+These guides live in the [repository](../../README.md), so the links below only resolve when
+you're browsing the source rather than the npm page:
+
 - [Root README](../../README.md) — concepts and links.
 - [`docs/layering.md`](../../docs/layering.md) — precedence, strict booleans, requiring a layer
   file to exist, unknown-key rejection, `explain()`.
