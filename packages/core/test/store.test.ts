@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ConfigValidationError } from "../src/errors";
+import { ConfigError, ConfigValidationError } from "../src/errors";
 import { STRICT_BOOLEAN } from "../src/formats";
 import { Store } from "../src/store";
 
@@ -111,6 +111,21 @@ describe("Store", () => {
     store.set("vault", "secret.apiKey", "from-vault");
     expect(store.get("secret.apiKey")).to.equal("from-vault");
     expect(store.explain("secret.apiKey").winner).to.equal("vault");
+  });
+
+  // convict would otherwise accept the write silently and explain() would report it as
+  // defaulted, hiding that a source set a misspelled secret key at all.
+  it("rejects set() for a key that is not in the schema instead of silently dropping its provenance", () => {
+    const store = new Store(schema);
+    expect(() => store.set("vault", "secret.ghost", "x")).toThrow(ConfigError);
+    try {
+      store.set("vault", "secret.ghost", "x");
+      expect.fail("set() should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigError);
+      expect((error as ConfigError).message).to.contain("vault");
+      expect((error as ConfigError).message).to.contain("secret.ghost");
+    }
   });
 
   // A schema says which secrets exist; a layer file says which ones this environment requires.

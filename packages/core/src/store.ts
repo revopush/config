@@ -1,6 +1,6 @@
 import convict from "convict";
 import { DEFAULT_LAYER, SECRET_PREFIX } from "./constants";
-import { ConfigValidationError } from "./errors";
+import { ConfigError, ConfigValidationError } from "./errors";
 import { registerFormats } from "./formats";
 import { getPath, leaves, setPath } from "./schema-walk";
 import { Provenance, Schema, SchemaEntry, SourceValues } from "./types";
@@ -47,12 +47,22 @@ export class Store {
     }
   }
 
-  /** Sets one key above every merged layer. Used for secrets. */
+  /**
+   * Sets one key above every merged layer. Used for secrets.
+   *
+   * The key must be in the schema: convict accepts a write to an undeclared key silently, and
+   * without a matching `layers` entry it would vanish from `explain()`'s audit trail, reporting
+   * as `default` even though a source set it.
+   */
   set(source: string, key: string, value: unknown): void {
+    if (!this.layers.has(key)) {
+      throw new ConfigError(`Source "${source}" set "${key}", which is not in the schema.`);
+    }
     this.store.set(key, value);
-    this.layers.get(key)?.push({ source, value });
+    this.layers.get(key)!.push({ source, value });
   }
 
+  /** Reads one key's resolved value. */
   get(key: string): unknown {
     return this.store.get(key);
   }
@@ -82,6 +92,7 @@ export class Store {
     }
   }
 
+  /** Returns the `Provenance` for one key: its resolved value, which source won, and what every merged layer contributed — the audit trail behind "why is this value what it is". */
   explain(key: string): Provenance {
     const layers = this.layers.get(key) ?? [];
     const winner = layers[layers.length - 1];
