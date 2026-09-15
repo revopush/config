@@ -75,4 +75,27 @@ describe("revopush-config types", () => {
     await runTypes(["--dir", root, "--out", out, "--interface", "Keys"], silent);
     expect(fs.readFileSync(out, "utf8")).to.contain("export interface Keys {");
   });
+
+  // The npm bin symlink cannot execute without a shebang.
+  it("source file starts with shebang", () => {
+    const source = fs.readFileSync(path.join(__dirname, "../../src/codegen/cli.ts"), "utf8");
+    expect(source.startsWith("#!/usr/bin/env node\n")).to.equal(true);
+  });
+
+  it("exits non-zero when --out is given no value", async () => {
+    const root = scratch();
+    const errors: string[] = [];
+    const code = await runTypes(["--dir", root, "--out"], { log: () => {}, error: (m) => errors.push(m) });
+    expect(code).to.equal(1);
+    expect(errors.join(" ")).to.contain("--out");
+  });
+
+  it("exits non-zero and names --out when given --check as its value", async () => {
+    const root = scratch();
+    const errors: string[] = [];
+    const code = await runTypes(["--dir", root, "--out", "--check"], { log: () => {}, error: (m) => errors.push(m) });
+    expect(code).to.equal(1);
+    // Verify the error names --out as required (from "Both --dir and --out are required")
+    expect(errors.join(" ")).to.contain("Both --dir and --out are required");
+  });
 });

@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { emitTypes } from "./emit";
@@ -25,7 +26,9 @@ const USAGE = `Usage: revopush-config types --dir <schema-dir> --out <file> [--c
 
 function flag(argv: string[], name: string): string | undefined {
   const index = argv.indexOf(name);
-  return index >= 0 ? argv[index + 1] : undefined;
+  if (index < 0) return undefined;
+  const value = argv[index + 1];
+  return value === undefined || value.startsWith("--") ? undefined : value;
 }
 
 /**
