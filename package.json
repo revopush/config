@@ -2,14 +2,15 @@
   "name": "revopush-config-monorepo",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": ["packages/*", "examples/*"],
   "engines": { "node": ">=20" },
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "changeset": "changeset",
-    "release": "npm run build && changeset publish"
+    "release": "npm run build && changeset publish",
+    "examples": "node examples/run-all.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",

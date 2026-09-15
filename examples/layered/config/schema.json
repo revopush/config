@@ -1,0 +1,5 @@
+{
+  "service": { "doc": "Service name", "default": "demo", "env": "SERVICE" },
+  "region": { "doc": "Region", "default": "", "env": "REGION_NAME" },
+  "endpoint": { "doc": "Endpoint", "default": "https://example.test", "env": "ENDPOINT" }
+}

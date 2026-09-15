@@ -1,0 +1,1 @@
+{ "name": "@revopush/config-example-basic", "private": true, "type": "module", "dependencies": { "@revopush/config": "*" } }
