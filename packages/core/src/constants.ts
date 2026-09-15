@@ -1,0 +1,8 @@
+/** Keys under this prefix are the only ones fetched from a secret source. */
+export const SECRET_PREFIX = "secret.";
+
+/** The schema and layer-file node holding secrets. */
+export const SECRET_NODE = "secret";
+
+/** Provenance name for values that came from a schema default rather than a source. */
+export const DEFAULT_LAYER = "default";
