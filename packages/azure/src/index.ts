@@ -15,11 +15,11 @@ export function resolveVaultUri(env: Record<string, string | undefined>): string
   return "";
 }
 
-function createClient(uri: string): SecretClient {
-  // Required lazily, not imported at module scope: the Azure SDK is 322 modules, and pulling it
-  // into every process that touches config costs more than most test suites take to run.
-  const { DefaultAzureCredential } = require("@azure/identity");
-  const { SecretClient: AzureSecretClient } = require("@azure/keyvault-secrets");
+async function createClient(uri: string): Promise<SecretClient> {
+  // Imported lazily, not at module scope: the Azure SDK is hundreds of modules, and importing
+  // this package must not load it when no vault is configured.
+  const { DefaultAzureCredential } = await import("@azure/identity");
+  const { SecretClient: AzureSecretClient } = await import("@azure/keyvault-secrets");
   return new AzureSecretClient(uri, new DefaultAzureCredential());
 }
 
@@ -44,13 +44,13 @@ export function azureKeyVault(client?: SecretClient): SecretSource {
 
       const uri = resolveVaultUri(process.env);
       if (!client && !uri) return values;
-      const vault = client ?? createClient(uri);
+      const vault = client ?? (await createClient(uri));
 
       await Promise.all(
         Array.from(names, async ([key, name]) => {
           try {
             const { value } = await vault.getSecret(name);
-            if (value) values.set(key, value);
+            if (value?.trim()) values.set(key, value);
           } catch (error) {
             if (isNotFound(error)) return;
             const detail = error instanceof Error ? error.message : String(error);

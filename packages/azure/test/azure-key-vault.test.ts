@@ -47,6 +47,14 @@ describe("azureKeyVault", () => {
     expect(resolved.size).to.equal(0);
   });
 
+  // A whitespace-only vault entry is the same class of misconfiguration as an empty string and
+  // must not shadow a working environment variable either.
+  it("drops whitespace-only values", async () => {
+    const source = azureKeyVault(stub({ "a": "   " }));
+    const resolved = await source.load(new Map([["secret.a", "a"]]));
+    expect(resolved.size).to.equal(0);
+  });
+
   // Optional secrets are absent by design; a 404 must leave the environment variable in charge
   // rather than abort startup for every other secret too.
   it("treats a secret that is not in the vault as absent", async () => {
