@@ -9,7 +9,7 @@ import { USAGE, readVersion, runTypes } from "./cli";
 // dist/codegen/bin.{cjs,js} -> packages/core/package.json, for both build formats.
 const PACKAGE_JSON = path.join(__dirname, "../../package.json");
 
-async function main() {
+async function main(): Promise<void> {
   const [, , command, ...rest] = process.argv;
 
   if (command === "--help" || command === "-h") {

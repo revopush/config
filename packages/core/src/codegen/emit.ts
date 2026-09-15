@@ -3,14 +3,15 @@ import { Schema, SchemaEntry } from "../types";
 
 const NUMERIC_FORMATS = new Set(["port", "int", "nat", "duration"]);
 
-function tsType(entry: SchemaEntry): string {
-  const base = entry.tsType ?? (() => {
-    if (Array.isArray(entry.format)) return entry.format.map((value) => JSON.stringify(value)).join(" | ");
-    else if (entry.format === "strict-boolean" || typeof entry.default === "boolean") return "boolean";
-    else if (NUMERIC_FORMATS.has(String(entry.format)) || typeof entry.default === "number") return "number";
-    else return "string";
-  })();
+function inferType(entry: SchemaEntry): string {
+  if (Array.isArray(entry.format)) return entry.format.map((value) => JSON.stringify(value)).join(" | ");
+  if (entry.format === "strict-boolean" || typeof entry.default === "boolean") return "boolean";
+  if (NUMERIC_FORMATS.has(String(entry.format)) || typeof entry.default === "number") return "number";
+  return "string";
+}
 
+function tsType(entry: SchemaEntry): string {
+  const base = entry.tsType ?? inferType(entry);
   return entry.nullable || entry.default === null ? `${base} | null` : base;
 }
 

@@ -14,17 +14,19 @@ import { Config, CreateConfigOptions, Provenance, Schema, Source, SourceContext 
  * Pass the generated `ConfigKeys` interface as `K` for typed keys and autocomplete.
  */
 export function createConfig<K = Record<string, any>>(options: CreateConfigOptions): Config<K> {
-  if ((options.schemaDir === undefined) === (options.schema === undefined)) {
+  const hasSchemaDir = options.schemaDir !== undefined;
+  const hasSchema = options.schema !== undefined;
+  if (hasSchemaDir === hasSchema) {
     throw new ConfigError("Pass exactly one of `schemaDir` or `schema` to createConfig().");
   }
 
   let store: Store | undefined;
   let pending: Promise<void> | undefined;
 
-  const ready = (key?: string): Store => {
+  function ready(key?: string): Store {
     if (!store) throw new ConfigNotInitializedError(key);
     return store;
-  };
+  }
 
   async function load(): Promise<void> {
     const schema: Schema = options.schema ?? readSchema(options.schemaDir!);
