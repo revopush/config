@@ -4,13 +4,12 @@ import { Schema, SchemaEntry } from "../types";
 const NUMERIC_FORMATS = new Set(["port", "int", "nat", "duration"]);
 
 function tsType(entry: SchemaEntry): string {
-  if (entry.tsType) return entry.tsType;
-
-  let base: string;
-  if (Array.isArray(entry.format)) base = entry.format.map((value) => JSON.stringify(value)).join(" | ");
-  else if (entry.format === "strict-boolean" || typeof entry.default === "boolean") base = "boolean";
-  else if (NUMERIC_FORMATS.has(String(entry.format)) || typeof entry.default === "number") base = "number";
-  else base = "string";
+  const base = entry.tsType ?? (() => {
+    if (Array.isArray(entry.format)) return entry.format.map((value) => JSON.stringify(value)).join(" | ");
+    else if (entry.format === "strict-boolean" || typeof entry.default === "boolean") return "boolean";
+    else if (NUMERIC_FORMATS.has(String(entry.format)) || typeof entry.default === "number") return "number";
+    else return "string";
+  })();
 
   return entry.nullable || entry.default === null ? `${base} | null` : base;
 }
@@ -33,7 +32,7 @@ export function emitTypes(schema: Schema, options: { interfaceName?: string } = 
 
   const body = entries
     .map(({ path, entry }) => {
-      const doc = entry.doc ? `  /** ${entry.doc} */\n` : "";
+      const doc = entry.doc ? `  /** ${entry.doc.replace(/\*\//g, "*\\/")} */\n` : "";
       return `${doc}  ${JSON.stringify(path)}: ${tsType(entry)};`;
     })
     .join("\n");

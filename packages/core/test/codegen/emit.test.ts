@@ -59,4 +59,24 @@ describe("emitTypes", () => {
   it("emits an empty interface for an empty schema", () => {
     expect(emitTypes({})).to.contain("export interface ConfigKeys {}");
   });
+
+  it("applies nullable to tsType escape hatch with nullable: true", () => {
+    // The escape hatch must not opt out of nullability: tsType chooses the base type,
+    // but nullable handling still applies afterward.
+    expect(line({ a: { doc: "A", format: "port", default: 1, nullable: true, tsType: "CustomPort" } }, "a")).to.equal(
+      `"a": CustomPort | null;`
+    );
+  });
+
+  it("applies nullable to tsType escape hatch with null default", () => {
+    expect(line({ a: { doc: "A", format: "port", default: null, tsType: "CustomPort" } }, "a")).to.equal(
+      `"a": CustomPort | null;`
+    );
+  });
+
+  it("escapes */ in doc comments to prevent early termination", () => {
+    const output = emitTypes({ a: { doc: "Ends with */ comment terminator", default: "" } });
+    // */ in the doc text is escaped to *\/ so it cannot terminate the comment early
+    expect(output).to.contain("/** Ends with *\\/ comment terminator */");
+  });
 });
