@@ -1,0 +1,21 @@
+{
+  "name": "@revopush/config-azure-keyvault",
+  "version": "0.1.0",
+  "description": "Azure Key Vault secret provider for @revopush/config.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "engines": { "node": ">=20" },
+  "scripts": { "build": "tsup" },
+  "peerDependencies": { "@revopush/config": "^0.1.0" },
+  "dependencies": {
+    "@azure/identity": "^4.9.1",
+    "@azure/keyvault-secrets": "^4.9.0"
+  }
+}
