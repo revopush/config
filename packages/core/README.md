@@ -62,6 +62,8 @@ config.get("secret.sessionSecret"); // from SESSION_SECRET, since no secretSourc
   worked example.
 - [`docs/writing-a-secret-source.md`](../../docs/writing-a-secret-source.md) — the `SecretSource`
   interface and a worked example.
+- [`docs/typed-keys.md`](../../docs/typed-keys.md) — generating and using the `ConfigKeys`
+  interface, the mapping table, and `--check` in CI.
 - [`docs/migrating.md`](../../docs/migrating.md) — from convict or node-config.
 - [`@revopush/config-azure-keyvault`](../azure/README.md) — the Azure Key Vault secret provider.
 

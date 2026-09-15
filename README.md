@@ -86,7 +86,7 @@ source does not hold a given secret. See
 
 - **Typed keys from the schema.** Generate a `ConfigKeys` interface from `schema.json` and
   `config.get()` becomes fully typed and autocompleted — no hand-maintained interface to drift from
-  the schema.
+  the schema. See [`docs/typed-keys.md`](docs/typed-keys.md).
 - **Provenance via `explain()`.** Every value can be traced to the layer that set it: schema
   default, which file, which environment variable, which secret source. `toJSON()` gives the same
   view for logging, with `sensitive` keys redacted.
@@ -102,6 +102,8 @@ source does not hold a given secret. See
   example.
 - [`docs/writing-a-secret-source.md`](docs/writing-a-secret-source.md) — the `SecretSource`
   interface, its three rules, and a worked example.
+- [`docs/typed-keys.md`](docs/typed-keys.md) — generating and using the `ConfigKeys` interface,
+  the schema-to-TypeScript mapping table, and `--check` in CI.
 - [`docs/migrating.md`](docs/migrating.md) — moving from convict or node-config.
 
 ## Packages
