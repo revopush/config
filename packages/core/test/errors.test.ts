@@ -24,6 +24,16 @@ describe("errors", () => {
     expect(error.message).to.contain("redis.port");
   });
 
+  // toJSON() has no key of its own; the message must not imply one, e.g. by naming "toJSON" as if
+  // it were a config key.
+  it("says configuration was read too early without naming a key when none is given", () => {
+    const error = new ConfigNotInitializedError();
+    expect(error.key).to.equal(undefined);
+    expect(error.message).to.contain("read before init()");
+    expect(error.message).to.not.contain("toJSON");
+    expect(error.message).to.not.contain('""');
+  });
+
   it("carries every rejected key, not just the first", () => {
     const error = new ConfigValidationError(["a.b", "c.d"], "detail");
     expect(error.keys).to.deep.equal(["a.b", "c.d"]);

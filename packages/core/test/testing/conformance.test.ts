@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { testSecretSource, testSource } from "../../src/testing/index";
+import { env } from "../../src/sources/env";
+import { fileLayers } from "../../src/sources/file-layers";
 import { SecretSource, Source } from "../../src/types";
 
 // A well-behaved implementation, driven by the fixtures the kit supplies.
@@ -19,6 +21,11 @@ describe("a conforming secret source", () =>
 
 describe("a conforming source", () =>
   testSource(() => ({ name: "conforming", load: () => ({ a: { b: "value" } }) })));
+
+// The kit applied to the library's own reference sources, so a regression in either one is caught
+// the same way a third party's Source implementation would be.
+describe("env() conforms to the Source contract", () => testSource(() => env()));
+describe("fileLayers() conforms to the Source contract", () => testSource(() => fileLayers()));
 
 describe("the kit itself", () => {
   it("is exported as two functions", () => {

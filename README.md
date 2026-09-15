@@ -82,6 +82,12 @@ any store of named values in principle — with the environment variable as the 
 source does not hold a given secret. See
 [`docs/writing-a-secret-source.md`](docs/writing-a-secret-source.md).
 
+**Calling `init()`.** `init()` is not idempotent: two calls made after the first has settled each
+do a fresh load — re-reading every file, re-fetching every secret. That is deliberate (it is what
+lets a test change an environment variable and re-read), but it means a service that awaits
+`init()` from two separate entry points pays for the vault round trip twice. Call it once, in one
+place, and share the resulting `config`.
+
 ## Why not node-config or convict alone
 
 - **Typed keys from the schema.** Generate a `ConfigKeys` interface from `schema.json` and
@@ -96,8 +102,8 @@ source does not hold a given secret. See
 
 ## Guides
 
-- [`docs/layering.md`](docs/layering.md) — precedence order, strict booleans, unknown-key
-  rejection, and reading `explain()` output.
+- [`docs/layering.md`](docs/layering.md) — precedence order, strict booleans, requiring a layer
+  file to exist, unknown-key rejection, and reading `explain()` output.
 - [`docs/writing-a-source.md`](docs/writing-a-source.md) — the `Source` interface and a worked
   example.
 - [`docs/writing-a-secret-source.md`](docs/writing-a-secret-source.md) — the `SecretSource`

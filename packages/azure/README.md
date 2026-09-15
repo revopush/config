@@ -43,6 +43,12 @@ The vault is located from an environment variable, checked in this order:
 If neither is set, `azureKeyVault()` resolves every secret to nothing rather than erroring — vault
 loading is simply disabled, and every declared secret falls back to its environment variable.
 
+Pass `{ required: true }` to make a missing vault location a hard failure instead:
+`azureKeyVault({ required: true })` throws a `ConfigError` naming the two environment variables the
+moment a secret is declared and neither is set, rather than silently falling back to environment
+variables for every secret. Defaults to `false`, so local development without a vault is
+unaffected.
+
 ## Required role
 
 The identity `DefaultAzureCredential` resolves needs the **Key Vault Secrets User** role (or
@@ -62,7 +68,10 @@ propagate, and stops `config.init()` from resolving. An unreachable vault is ind
 an outage and must never be silently treated the same as "this one secret isn't here."
 
 A vault entry that exists but is empty or whitespace-only is also dropped rather than returned,
-so it cannot silently shadow a working environment variable with a blank value.
+so it cannot silently shadow a working environment variable with a blank value. A value with
+meaningful surrounding whitespace — not whitespace-only — is stored unchanged: this presence check
+only gates whether the value counts as set, not what gets stored, because some tokens carry
+significant whitespace.
 
 ## License
 

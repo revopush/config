@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { spawnSync } from "node:child_process";
-import { runTypes } from "../../src/codegen/cli";
+import { USAGE, readVersion, runTypes } from "../../src/codegen/cli";
 
 let dir: string;
 
@@ -81,6 +81,30 @@ describe("revopush-config types", () => {
   it("bin.ts starts with shebang", () => {
     const source = fs.readFileSync(path.join(__dirname, "../../src/codegen/bin.ts"), "utf8");
     expect(source.startsWith("#!/usr/bin/env node\n")).to.equal(true);
+  });
+
+  // bin.ts and cli.ts used to each hard-code their own copy of USAGE; bin.ts must import the one
+  // cli.ts exports instead of duplicating it.
+  it("bin.ts imports USAGE from cli.ts instead of duplicating it", () => {
+    const source = fs.readFileSync(path.join(__dirname, "../../src/codegen/bin.ts"), "utf8");
+    expect(source).toContain("USAGE");
+    expect(source).not.toContain("const USAGE =");
+  });
+
+  describe("readVersion", () => {
+    it("reads the version field from a package.json file", () => {
+      const root = scratch();
+      const pkgPath = path.join(root, "package.json");
+      fs.writeFileSync(pkgPath, JSON.stringify({ name: "x", version: "9.9.9" }));
+      expect(readVersion(pkgPath)).to.equal("9.9.9");
+    });
+
+    it("throws when the package.json has no version field", () => {
+      const root = scratch();
+      const pkgPath = path.join(root, "package.json");
+      fs.writeFileSync(pkgPath, JSON.stringify({ name: "x" }));
+      expect(() => readVersion(pkgPath)).toThrow(/version/);
+    });
   });
 
   // The pure module (cli.ts) must have no side effects when imported, so it should not have
@@ -201,5 +225,42 @@ describe("revopush-config types", () => {
     const out = path.join(root, "keys.ts");
     const result = await runTypes(["--dir", root, "--out", out], silent);
     expect(result).to.equal(0);
+  });
+
+  describe("through a symlink", () => {
+    function withSymlink<T>(fn: (symlinkPath: string, tempDir: string) => T): T {
+      const binPath = path.join(__dirname, "../../dist/codegen/bin.cjs");
+      if (!fs.existsSync(binPath)) {
+        throw new Error(`Built binary not found at ${binPath}. Run 'npm run build' first.`);
+      }
+      const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "config-cli-symlink-"));
+      try {
+        const symlinkPath = path.join(tempDir, "revopush-config");
+        fs.symlinkSync(binPath, symlinkPath);
+        return fn(symlinkPath, tempDir);
+      } finally {
+        fs.rmSync(tempDir, { recursive: true, force: true });
+      }
+    }
+
+    // --help used to fall into the "unknown command" branch: usage on stderr, exit 1. It must
+    // print to stdout and exit 0, like a well-behaved CLI's --help.
+    it("--help prints usage to stdout and exits zero", () => {
+      withSymlink((symlinkPath) => {
+        const result = spawnSync(symlinkPath, ["--help"], { encoding: "utf8" });
+        expect(result.status).to.equal(0);
+        expect(result.stdout).toContain(USAGE);
+        expect(result.stderr).to.equal("");
+      });
+    });
+
+    it("--version prints the package's actual version and exits zero", () => {
+      withSymlink((symlinkPath) => {
+        const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "../../package.json"), "utf8"));
+        const result = spawnSync(symlinkPath, ["--version"], { encoding: "utf8" });
+        expect(result.status).to.equal(0);
+        expect(result.stdout.trim()).to.equal(pkg.version);
+      });
+    });
   });
 });

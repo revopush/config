@@ -1,8 +1,20 @@
-import type { SecretSource } from "@revopush/config";
+import { ConfigError, type SecretSource } from "@revopush/config";
 
 /** The part of the Azure SDK's SecretClient this provider uses. */
 export interface SecretClient {
   getSecret(name: string): Promise<{ value?: string }>;
+}
+
+/** Options for {@link azureKeyVault}. */
+export interface AzureKeyVaultOptions {
+  /** Injects a pre-built client, bypassing `DefaultAzureCredential`. Mainly for tests. */
+  client?: SecretClient;
+  /**
+   * Throw a `ConfigError` when neither `AZURE_KEYVAULT_URI` nor `AZURE_KEYVAULT_ACCOUNT` is set,
+   * instead of silently resolving every secret to nothing. Defaults to `false`, so local
+   * development without a vault is unaffected.
+   */
+  required?: boolean;
 }
 
 /**
@@ -34,8 +46,14 @@ function isNotFound(error: unknown): boolean {
  * A secret the vault does not hold is omitted rather than thrown, because optional secrets are
  * absent by design and every secret also has an environment variable. Any other failure rejects,
  * because an unreachable vault is indistinguishable from an outage and must stop startup.
+ *
+ * A fetched value is stored verbatim once it passes an `if (value?.trim())` presence check: a
+ * whitespace-only value counts as absent, matching the empty-string rule below, but a value with
+ * meaningful surrounding whitespace is otherwise stored unchanged, because some tokens carry
+ * significant whitespace.
  */
-export function azureKeyVault(client?: SecretClient): SecretSource {
+export function azureKeyVault(options: AzureKeyVaultOptions = {}): SecretSource {
+  const { client, required = false } = options;
   return {
     name: "azure-key-vault",
     async load(names: ReadonlyMap<string, string>): Promise<Map<string, string>> {
@@ -43,7 +61,15 @@ export function azureKeyVault(client?: SecretClient): SecretSource {
       if (names.size === 0) return values;
 
       const uri = resolveVaultUri(process.env);
-      if (!client && !uri) return values;
+      if (!client && !uri) {
+        if (required) {
+          throw new ConfigError(
+            "azureKeyVault({ required: true }) needs a vault, but neither AZURE_KEYVAULT_URI nor " +
+              "AZURE_KEYVAULT_ACCOUNT is set."
+          );
+        }
+        return values;
+      }
       const vault = client ?? (await createClient(uri));
 
       await Promise.all(

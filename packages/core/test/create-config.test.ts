@@ -50,11 +50,39 @@ describe("createConfig", () => {
     expect(() => config.get("redis.host")).toThrow(/redis\.host/);
   });
 
+  // The message used to name the key as "toJSON", which reads like a config key rather than the
+  // method that was called.
+  it("throws without implying a key name when toJSON() is read before init", () => {
+    const config = build();
+    expect(() => config.toJSON()).toThrow(ConfigNotInitializedError);
+    try {
+      config.toJSON();
+      expect.fail("toJSON() should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigNotInitializedError);
+      expect((error as ConfigNotInitializedError).key).to.equal(undefined);
+      expect((error as ConfigNotInitializedError).message).to.not.contain("toJSON");
+    }
+  });
+
   it("layers the file over the schema default", async () => {
     const config = build({ secretSource: stubSecrets({ "api-key": "k" }) });
     await config.init();
     expect(config.get("redis.host")).to.equal("staging-redis");
     expect(config.get("redis.port")).to.equal(6379);
+  });
+
+  it("disagrees on purpose about an unknown key: has() is false, get() and explain() throw ConfigError", async () => {
+    const config = build({ secretSource: stubSecrets({ "api-key": "k" }) });
+    await config.init();
+
+    expect(config.has("typo" as any)).to.equal(false);
+
+    expect(() => config.get("typo" as any)).toThrow(ConfigError);
+    expect(() => config.get("typo" as any)).not.toThrow(/cannot find configuration param/);
+
+    expect(() => config.explain("typo" as any)).toThrow(ConfigError);
+    expect(() => config.explain("typo" as any)).not.toThrow(/cannot find configuration param/);
   });
 
   it("lets an environment variable beat the file", async () => {
@@ -127,6 +155,19 @@ describe("createConfig", () => {
     await config.init().catch((error: SourceError) => {
       expect(error.source).to.equal("broken");
       expect((error.cause as Error).message).to.equal("disk on fire");
+    });
+  });
+
+  // Source.name is documented as unique within one config; without this check, explain()'s
+  // layers and declaredSecrets()' attribution become ambiguous about which of the two same-named
+  // sources actually won.
+  it("rejects two sources that share a name", async () => {
+    const first: Source = { name: "dup", load: () => ({}) };
+    const second: Source = { name: "dup", load: () => ({}) };
+    const config = build({ sources: [first, second] });
+    await expect(config.init()).rejects.toThrow(ConfigError);
+    await config.init().catch((error: ConfigError) => {
+      expect(error.message).to.contain("dup");
     });
   });
 

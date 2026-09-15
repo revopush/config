@@ -21,7 +21,7 @@ export function createConfig<K = Record<string, any>>(options: CreateConfigOptio
   let store: Store | undefined;
   let pending: Promise<void> | undefined;
 
-  const ready = (key: string): Store => {
+  const ready = (key?: string): Store => {
     if (!store) throw new ConfigNotInitializedError(key);
     return store;
   };
@@ -38,6 +38,16 @@ export function createConfig<K = Record<string, any>>(options: CreateConfigOptio
     };
 
     const sources: Source[] = options.sources ?? [fileLayers(), env()];
+    const seenSourceNames = new Set<string>();
+    for (const source of sources) {
+      if (seenSourceNames.has(source.name)) {
+        throw new ConfigError(
+          `Two sources are both named "${source.name}". Source.name must be unique within one config.`
+        );
+      }
+      seenSourceNames.add(source.name);
+    }
+
     for (const source of sources) {
       try {
         next.merge(source.name, await source.load(context));
@@ -66,6 +76,15 @@ export function createConfig<K = Record<string, any>>(options: CreateConfigOptio
   }
 
   return {
+    /**
+     * Loads every source and secret, then validates the result. Concurrent calls share one
+     * in-flight load, but each call that starts after the previous one settles triggers a fresh
+     * load — re-reading every file and re-fetching every secret. That is deliberate: it is what
+     * lets a test change an environment variable and re-read. It also means a service that awaits
+     * `init()` from two separate entry points (e.g. an HTTP server and a worker, each calling it
+     * independently) pays for two full loads — including two secret-store round trips — rather
+     * than sharing one. Call `init()` once, in one place, and share the resulting `config`.
+     */
     init(): Promise<void> {
       if (pending) return pending;
       pending = load().finally(() => {
@@ -83,7 +102,7 @@ export function createConfig<K = Record<string, any>>(options: CreateConfigOptio
       return ready(key).explain(key);
     },
     toJSON(): Record<string, unknown> {
-      return ready("toJSON").toJSON();
+      return ready().toJSON();
     },
   };
 }

@@ -6,10 +6,19 @@ export class ConfigError extends Error {
   }
 }
 
-/** Thrown when configuration is read before `init()` has resolved. */
+/**
+ * Thrown when configuration is read before `init()` has resolved.
+ *
+ * `key` is the config key that was read, when there is one — `toJSON()` has none, so it omits the
+ * key entirely rather than naming something like `"toJSON"` that could be mistaken for a config key.
+ */
 export class ConfigNotInitializedError extends ConfigError {
-  constructor(readonly key: string) {
-    super(`Configuration was read before init(): "${key}". Await config.init() in the entry point first.`);
+  constructor(readonly key?: string) {
+    super(
+      key === undefined
+        ? `Configuration was read before init(). Await config.init() in the entry point first.`
+        : `Configuration was read before init(): "${key}". Await config.init() in the entry point first.`
+    );
   }
 }
 

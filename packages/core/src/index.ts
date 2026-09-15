@@ -1,6 +1,3 @@
-/** The published version of this package. */
-export const VERSION = "0.1.0";
-
 export { createConfig } from "./create-config";
 export { env, type EnvOptions } from "./sources/env";
 export { fileLayers, type FileLayersOptions } from "./sources/file-layers";

@@ -1,19 +1,27 @@
 #!/usr/bin/env node
-import { runTypes } from "./cli";
+import * as path from "node:path";
+import { USAGE, readVersion, runTypes } from "./cli";
 
 /**
  * CLI entry point for the `types` command. Handles argv parsing and process exit.
  */
 
-const USAGE = `Usage: revopush-config types --dir <schema-dir> --out <file> [--check] [--interface <name>]
-
-  --dir        Directory containing schema.json
-  --out        File to write
-  --check      Exit non-zero if --out does not match the schema; writes nothing
-  --interface  Name of the emitted interface (default: ConfigKeys)`;
+// dist/codegen/bin.{cjs,js} -> packages/core/package.json, for both build formats.
+const PACKAGE_JSON = path.join(__dirname, "../../package.json");
 
 async function main() {
   const [, , command, ...rest] = process.argv;
+
+  if (command === "--help" || command === "-h") {
+    console.log(USAGE);
+    process.exit(0);
+  }
+
+  if (command === "--version" || command === "-v") {
+    console.log(readVersion(PACKAGE_JSON));
+    process.exit(0);
+  }
+
   if (command !== "types") {
     console.error(USAGE);
     process.exit(1);

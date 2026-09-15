@@ -75,6 +75,22 @@ await config.init();
 config.get("enableAccountRegistration"); // false
 ```
 
+## Requiring a layer file to exist
+
+By default, `fileLayers()` treats a missing layer file as normal: no file for the given
+`environment` just means "fall through to the schema defaults and whatever earlier sources set,"
+with a warning routed through `onWarning`. That is convenient in development, where not every
+environment has a file, but it means a typo'd `ENVIRONMENT` value (or a deploy that forgot to ship
+the file) silently runs on defaults in production instead of failing loudly.
+
+Pass `{ required: true }` to turn that into a hard failure: `fileLayers({ environment, required:
+true })` throws a `ConfigError` naming the environment and the directory it searched, instead of
+warning and returning `{}`, the moment no candidate file exists. Defaults to `false`.
+
+```ts
+sources: [fileLayers({ environment: process.env.ENVIRONMENT, required: true }), env()];
+```
+
 ## Unknown keys are rejected
 
 A key that appears in a layer file (or, via `secretName`, in a secret store) but is not declared in

@@ -1,3 +1,4 @@
+import * as os from "node:os";
 import { expect, it } from "vitest";
 import { SecretSource, Source, SourceContext } from "../types";
 
@@ -61,6 +62,10 @@ export function testSource(factory: () => Source): void {
       a: { doc: "example", format: "string", default: "value", env: "EXAMPLE" },
       b: { doc: "another", format: "number", default: 42 },
     }),
+    // A real, usable directory: file-based sources such as fileLayers() require `dir` and would
+    // otherwise fail the whole kit before their own logic runs. No file in it is expected to
+    // match, so a directory-based source that finds nothing here must fall through gracefully.
+    dir: os.tmpdir(),
     get: () => undefined,
     warn: () => {},
   };

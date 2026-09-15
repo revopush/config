@@ -16,12 +16,14 @@ export interface CliIO {
   error(message: string): void;
 }
 
-const USAGE = `Usage: revopush-config types --dir <schema-dir> --out <file> [--check] [--interface <name>]
+export const USAGE = `Usage: revopush-config types --dir <schema-dir> --out <file> [--check] [--interface <name>]
 
   --dir        Directory containing schema.json
   --out        File to write
   --check      Exit non-zero if --out does not match the schema; writes nothing
-  --interface  Name of the emitted interface (default: ConfigKeys)`;
+  --interface  Name of the emitted interface (default: ConfigKeys)
+
+Usage: revopush-config --help | --version`;
 
 function flag(argv: string[], name: string): string | undefined {
   const index = argv.indexOf(name);
@@ -31,7 +33,23 @@ function flag(argv: string[], name: string): string | undefined {
 }
 
 /**
+ * Reads the `version` field from a package.json file. Used for `--version`, so the CLI reports the
+ * package's actual published version instead of a hard-coded string that drifts from it.
+ */
+export function readVersion(packageJsonPath: string): string {
+  const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8")) as { version?: string };
+  if (typeof pkg.version !== "string") {
+    throw new Error(`No "version" field in ${packageJsonPath}.`);
+  }
+  return pkg.version;
+}
+
+/**
  * Runs the `types` command. Returns the process exit code rather than exiting, so it is testable.
+ *
+ * `io` deliberately defaults to `console`, unlike the library's `onWarning` (silent unless a
+ * consumer opts in): this is a terminal entry point, where saying nothing by default would be a
+ * broken CLI, not a well-behaved library default.
  */
 export async function runTypes(argv: string[], io: CliIO = console): Promise<number> {
   const dir = flag(argv, "--dir");

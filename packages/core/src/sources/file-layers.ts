@@ -17,6 +17,12 @@ export interface FileLayersOptions {
   names?: (environment: string, region: string) => string[];
   /** Overrides the source name shown in errors and `explain()`. */
   name?: string;
+  /**
+   * Throw a `ConfigError` naming the environment and directory when no layer file matched, instead
+   * of warning and continuing with schema defaults. Defaults to `false`, so local development
+   * without every environment's file present is unaffected.
+   */
+  required?: boolean;
 }
 
 const defaultNames = (environment: string, region: string): string[] =>
@@ -60,14 +66,25 @@ export function fileLayers(options: FileLayersOptions = {}): Source {
       const files = names.map((file) => path.join(dir, file)).filter((file) => fs.existsSync(file));
 
       if (files.length === 0) {
+        if (options.required) {
+          throw new ConfigError(
+            `fileLayers() found no layer file for environment "${environment}" in ${dir}, and \`required\` is true.`
+          );
+        }
         context.warn(`No layer file for environment "${environment}" in ${dir}; using schema defaults.`);
         return {};
       }
 
-      return files.reduce<SourceValues>(
-        (values, file) => merge(values, JSON.parse(fs.readFileSync(file, "utf8")) as SourceValues),
-        {}
-      );
+      return files.reduce<SourceValues>((values, file) => {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+        } catch (cause) {
+          const detail = cause instanceof Error ? cause.message : String(cause);
+          throw new ConfigError(`fileLayers() could not parse ${file}: ${detail}`);
+        }
+        return merge(values, parsed as SourceValues);
+      }, {});
     },
   };
 }

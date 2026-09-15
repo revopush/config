@@ -76,4 +76,45 @@ describe("fileLayers source", () => {
     const items = values.items as unknown;
     expect(items).to.deep.equal(["x"]);
   });
+
+  it("names the file that failed to parse", async () => {
+    try {
+      await fileLayers({ environment: "broken" }).load(context(DIR));
+      expect.fail("load() should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigError);
+      expect((error as ConfigError).message).to.contain(path.join(DIR, "broken.json"));
+    }
+  });
+
+  it("names the specific file among two candidates that failed to parse", async () => {
+    // production.json is valid; production.brokenregion.json is not, so the error must identify
+    // the region file, not the environment file, and not stay silent about which one it was.
+    try {
+      await fileLayers({ environment: "production", region: "brokenregion" }).load(context(DIR));
+      expect.fail("load() should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigError);
+      const message = (error as ConfigError).message;
+      expect(message).to.contain(path.join(DIR, "production.brokenregion.json"));
+      expect(message).to.not.contain(path.join(DIR, "production.json") + ":");
+    }
+  });
+
+  it("throws ConfigError naming the environment and directory when required and no file matched", async () => {
+    try {
+      await fileLayers({ environment: "nope", required: true }).load(context(DIR));
+      expect.fail("load() should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigError);
+      const message = (error as ConfigError).message;
+      expect(message).to.contain("nope");
+      expect(message).to.contain(DIR);
+    }
+  });
+
+  it("does not throw when required and a file matched", async () => {
+    const values = await fileLayers({ environment: "production", required: true }).load(context(DIR));
+    expect((values.redis as Record<string, unknown>).host).to.equal("prod-redis");
+  });
 });

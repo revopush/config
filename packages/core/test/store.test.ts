@@ -42,6 +42,39 @@ describe("Store", () => {
     expect(store.has("redis.host")).to.equal(true);
   });
 
+  // has() answers "is this set" and an undeclared key is never set, so it stays false rather than
+  // throwing — unlike get() and explain(), which must fail loudly on a typo'd key.
+  it("returns false from has() for a key that is not in the schema, without throwing", () => {
+    const store = new Store(schema);
+    expect(store.has("typo")).to.equal(false);
+  });
+
+  it("throws ConfigError, not a raw convict error, from get() for a key that is not in the schema", () => {
+    const store = new Store(schema);
+    expect(() => store.get("typo")).toThrow(ConfigError);
+    try {
+      store.get("typo");
+      expect.fail("get() should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigError);
+      expect((error as ConfigError).message).to.contain("typo");
+      expect((error as ConfigError).message).to.not.contain("cannot find configuration param");
+    }
+  });
+
+  it("throws ConfigError, not a raw convict error, from explain() for a key that is not in the schema", () => {
+    const store = new Store(schema);
+    expect(() => store.explain("typo")).toThrow(ConfigError);
+    try {
+      store.explain("typo");
+      expect.fail("explain() should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigError);
+      expect((error as ConfigError).message).to.contain("typo");
+      expect((error as ConfigError).message).to.not.contain("cannot find configuration param");
+    }
+  });
+
   it("rejects a key that is not in the schema, which catches typos", () => {
     const store = new Store(schema);
     store.merge("file", { redis: { hsot: "typo" } });

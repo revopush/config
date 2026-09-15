@@ -53,11 +53,16 @@ config.get("redis.host"); // "staging-redis.internal" — from staging.json
 config.get("secret.sessionSecret"); // from SESSION_SECRET, since no secretSource is configured
 ```
 
+Call `init()` once, in one place, and share the resulting `config`: it is not idempotent by
+design (a later call re-reads every file and re-fetches every secret, which is what lets a test
+change an environment variable and re-read), so awaiting it from two separate entry points pays
+for the vault round trip twice.
+
 ## Documentation
 
 - [Root README](../../README.md) — concepts and links.
-- [`docs/layering.md`](../../docs/layering.md) — precedence, strict booleans, unknown-key
-  rejection, `explain()`.
+- [`docs/layering.md`](../../docs/layering.md) — precedence, strict booleans, requiring a layer
+  file to exist, unknown-key rejection, `explain()`.
 - [`docs/writing-a-source.md`](../../docs/writing-a-source.md) — the `Source` interface and a
   worked example.
 - [`docs/writing-a-secret-source.md`](../../docs/writing-a-secret-source.md) — the `SecretSource`

@@ -62,15 +62,28 @@ export class Store {
     this.layers.get(key)!.push({ source, value });
   }
 
-  /** Reads one key's resolved value. */
+  /** Throws `ConfigError` naming the key when it is not declared in the schema. */
+  private assertKnown(key: string): void {
+    if (!this.entries.has(key)) {
+      throw new ConfigError(`Unknown configuration key "${key}": not declared in the schema.`);
+    }
+  }
+
+  /** Reads one key's resolved value. Throws `ConfigError` for a key not in the schema. */
   get(key: string): unknown {
+    this.assertKnown(key);
     return this.store.get(key);
   }
 
-  /** True when the key holds a value that is neither undefined, null, nor empty. */
+  /**
+   * True when the key holds a value that is neither undefined, null, nor empty. Returns `false`,
+   * rather than throwing, for a key that is not in the schema — unlike `get()` and `explain()` —
+   * because `has()` exists to answer "is this set", and an undeclared key is never set.
+   */
   has(key: string): boolean {
+    if (!this.entries.has(key)) return false;
     if (!this.store.has(key)) return false;
-    const value = this.get(key);
+    const value = this.store.get(key);
     return value !== undefined && value !== null && value !== "";
   }
 
@@ -92,8 +105,13 @@ export class Store {
     }
   }
 
-  /** Returns the `Provenance` for one key: its resolved value, which source won, and what every merged layer contributed — the audit trail behind "why is this value what it is". */
+  /**
+   * Returns the `Provenance` for one key: its resolved value, which source won, and what every
+   * merged layer contributed — the audit trail behind "why is this value what it is". Throws
+   * `ConfigError` for a key not in the schema.
+   */
   explain(key: string): Provenance {
+    this.assertKnown(key);
     const layers = this.layers.get(key) ?? [];
     const winner = layers[layers.length - 1];
     return {
