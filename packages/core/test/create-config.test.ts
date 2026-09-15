@@ -174,6 +174,47 @@ describe("createConfig", () => {
     expect(config.get("redis.host")).to.equal("second");
   });
 
+  it("re-runs the pipeline after a rejected init(), not a cached rejection", async () => {
+    // Pins that `pending` is cleared on rejection as well as on success: `load().finally(...)`
+    // must reset `pending` even when `load()` throws, so a second init() genuinely retries
+    // instead of replaying the same rejected promise forever. A source whose behaviour changes
+    // between calls (fails, then succeeds) is what distinguishes this from a broken
+    // implementation that returns the same rejection every time.
+    let attempt = 0;
+    const flaky: Source = {
+      name: "flaky",
+      load: () => {
+        attempt++;
+        if (attempt === 1) throw new Error("first attempt fails");
+        return { redis: { host: "recovered" } };
+      },
+    };
+    const config = build({ sources: [flaky] });
+
+    await expect(config.init()).rejects.toThrow(SourceError);
+    await config.init();
+    expect(config.get("redis.host")).to.equal("recovered");
+  });
+
+  it("keeps a previously-successful config intact after a later init() fails", async () => {
+    // A failed reload must not replace a working configuration: `store` is only reassigned after
+    // validate() and the missing-secrets check pass, so a prior successful store must survive a
+    // second init() that fails.
+    const from: Record<string, string | undefined> = { APPTEST_API_KEY: "first-key" };
+    const config = build({
+      sources: [fileLayers({ environment: "staging" }), env({ from })],
+    });
+
+    await config.init();
+    expect(config.get("secret.apiKey")).to.equal("first-key");
+
+    delete from.APPTEST_API_KEY;
+    await expect(config.init()).rejects.toThrow(MissingSecretsError);
+
+    expect(config.get("secret.apiKey")).to.equal("first-key");
+    expect(() => config.get("redis.host")).not.toThrow(ConfigNotInitializedError);
+  });
+
   it("explains where a value came from", async () => {
     const config = build({
       sources: [fileLayers({ environment: "staging" }), env({ from: { APPTEST_REDIS_HOST: "env-redis" } })],
