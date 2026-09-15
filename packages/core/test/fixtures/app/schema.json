@@ -1,0 +1,10 @@
+{
+  "redis": {
+    "host": { "doc": "Host", "default": "localhost", "env": "APPTEST_REDIS_HOST" },
+    "port": { "doc": "Port", "format": "port", "default": 6379, "env": "APPTEST_REDIS_PORT" }
+  },
+  "secret": {
+    "apiKey": { "doc": "Api key", "default": "", "env": "APPTEST_API_KEY", "sensitive": true },
+    "unused": { "doc": "Unused", "default": "", "env": "APPTEST_UNUSED", "sensitive": true }
+  }
+}
