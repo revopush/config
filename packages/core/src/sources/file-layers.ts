@@ -22,10 +22,14 @@ export interface FileLayersOptions {
 const defaultNames = (environment: string, region: string): string[] =>
   region ? [`${environment}.json`, `${environment}.${region}.json`] : [`${environment}.json`];
 
+/** Arrays are values to replace wholesale, never nodes to merge. */
+const isPlainObject = (value: unknown): value is SourceValues =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
 function merge(target: SourceValues, source: SourceValues): SourceValues {
   for (const [key, value] of Object.entries(source)) {
     const existing = target[key];
-    if (value && typeof value === "object" && !Array.isArray(value) && existing && typeof existing === "object") {
+    if (isPlainObject(value) && isPlainObject(existing)) {
       merge(existing as SourceValues, value as SourceValues);
     } else {
       target[key] = value;

@@ -55,4 +55,25 @@ describe("fileLayers source", () => {
   it("fails clearly when no directory is available at all", () => {
     expect(() => fileLayers({ environment: "production" }).load(context(undefined))).toThrow(ConfigError);
   });
+
+  it("replaces an existing array with an incoming object", async () => {
+    const values = await fileLayers({ environment: "arraytest", region: "object" }).load(context(DIR));
+    const origins = values.origins as unknown;
+    expect(origins).to.deep.equal({ custom: "object" });
+    expect(Array.isArray(origins)).to.be.false;
+  });
+
+  it("replaces an existing object with an incoming array", async () => {
+    const values = await fileLayers({ environment: "objecttest", region: "array" }).load(context(DIR));
+    const config = values.config as unknown;
+    expect(config).to.deep.equal(["replaced", "with", "array"]);
+  });
+
+  it("replaces array wholesale rather than merging element-wise", async () => {
+    // A list-valued setting merged element-wise is a silent data corruption,
+    // so we verify that arrays replace completely: ["a","b","c"] overridden by ["x"] yields ["x"].
+    const values = await fileLayers({ environment: "arrayreplace", region: "short" }).load(context(DIR));
+    const items = values.items as unknown;
+    expect(items).to.deep.equal(["x"]);
+  });
 });
