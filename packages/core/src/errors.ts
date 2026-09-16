@@ -24,7 +24,10 @@ export class ConfigNotInitializedError extends ConfigError {
 
 /** Thrown when the merged configuration does not satisfy the schema. */
 export class ConfigValidationError extends ConfigError {
-  constructor(readonly keys: string[], detail: string) {
+  constructor(
+    readonly keys: string[],
+    detail: string
+  ) {
     super(`Configuration is invalid (${keys.length} problem(s)):\n${detail}`);
   }
 }
@@ -45,7 +48,10 @@ export class MissingSecretsError extends ConfigError {
 
 /** Thrown when a source or secret source fails, naming the plugin responsible. */
 export class SourceError extends ConfigError {
-  constructor(readonly source: string, readonly cause: unknown) {
+  constructor(
+    readonly source: string,
+    readonly cause: unknown
+  ) {
     super(`Source "${source}" failed: ${cause instanceof Error ? cause.message : String(cause)}`);
   }
 }

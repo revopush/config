@@ -8,7 +8,12 @@ const schema = {
     sessionSecretPrevious: { doc: "Retired", default: "", sensitive: true },
     auth0ClientSecret: { doc: "Auth0", default: "", sensitive: true },
     password: { doc: "Password", default: "", sensitive: true },
-    storageKey: { doc: "Storage", default: "", sensitive: true, secretName: "storage-{azure.storageAccount}" },
+    storageKey: {
+      doc: "Storage",
+      default: "",
+      sensitive: true,
+      secretName: "storage-{azure.storageAccount}",
+    },
   },
 };
 
@@ -19,9 +24,9 @@ describe("secretNames", () => {
   // ^[0-9a-zA-Z-]+$ — which reads as "not found" and silently falls back to the env var.
   it("flattens a nested secret key to a dashed name a store will accept", () => {
     const nested = { secret: { redis: { password: { doc: "P", default: "" } } } };
-    expect(secretNames(nested, ["secret.redis.password"], read).get("secret.redis.password")).to.equal(
-      "redis-password"
-    );
+    expect(
+      secretNames(nested, ["secret.redis.password"], read).get("secret.redis.password")
+    ).to.equal("redis-password");
   });
 
   it("derives a kebab-case name from a camelCase key", () => {
@@ -32,17 +37,21 @@ describe("secretNames", () => {
 
   // auth0ClientSecret is the awkward one: the boundary is digit-to-uppercase, not letter-to-uppercase.
   it("splits on a digit followed by an uppercase letter", () => {
-    expect(secretNames(schema, ["secret.auth0ClientSecret"], read).get("secret.auth0ClientSecret")).to.equal(
-      "auth0-client-secret"
-    );
+    expect(
+      secretNames(schema, ["secret.auth0ClientSecret"], read).get("secret.auth0ClientSecret")
+    ).to.equal("auth0-client-secret");
   });
 
   it("leaves an already-lowercase key untouched", () => {
-    expect(secretNames(schema, ["secret.password"], read).get("secret.password")).to.equal("password");
+    expect(secretNames(schema, ["secret.password"], read).get("secret.password")).to.equal(
+      "password"
+    );
   });
 
   it("prefers an explicit secretName over the derived one", () => {
-    expect(secretNames(schema, ["secret.storageKey"], read).get("secret.storageKey")).to.equal("storage-myaccount");
+    expect(secretNames(schema, ["secret.storageKey"], read).get("secret.storageKey")).to.equal(
+      "storage-myaccount"
+    );
   });
 
   it("resolves every placeholder in a secretName template", () => {
@@ -52,7 +61,9 @@ describe("secretNames", () => {
       secret: { k: { doc: "K", default: "", secretName: "{a.one}-x-{b.two}" } },
     };
     const values: Record<string, string> = { "a.one": "A", "b.two": "B" };
-    expect(secretNames(templated, ["secret.k"], (key) => values[key]).get("secret.k")).to.equal("A-x-B");
+    expect(secretNames(templated, ["secret.k"], (key) => values[key]).get("secret.k")).to.equal(
+      "A-x-B"
+    );
   });
 
   it("ignores a declared key that is not in the schema", () => {

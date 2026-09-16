@@ -32,11 +32,11 @@ actually writes:
 
 export interface ConfigKeys {
   /** HTTP port */
-  "port": number;
+  port: number;
   /** Log verbosity */
-  "logLevel": "debug" | "info" | "warn";
+  logLevel: "debug" | "info" | "warn";
   /** Whether new accounts can register */
-  "enableAccountRegistration": boolean;
+  enableAccountRegistration: boolean;
   /** Redis port */
   "redis.port": number | null;
   /** Session signing secret */
@@ -99,14 +99,14 @@ the typo'd call site.
 The emitter walks every schema leaf — any node carrying `default` — and maps it to a TypeScript
 type:
 
-| schema | TypeScript |
-|---|---|
-| `format` is an array, e.g. `["debug", "info", "warn"]` | union of string literals: `"debug" \| "info" \| "warn"` |
-| `format: "strict-boolean" \| "boolean" \| "Boolean"`, or a boolean `default` | `boolean` |
-| `format: "port" \| "int" \| "nat" \| "duration" \| "number" \| "Number"`, or a number `default` | `number` |
-| anything else | `string` |
-| `nullable: true`, or `default: null` | appends `\| null` to whatever the above produced |
-| `tsType: "..."` present | overrides everything above — see below |
+| schema                                                                                          | TypeScript                                              |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| `format` is an array, e.g. `["debug", "info", "warn"]`                                          | union of string literals: `"debug" \| "info" \| "warn"` |
+| `format: "strict-boolean" \| "boolean" \| "Boolean"`, or a boolean `default`                    | `boolean`                                               |
+| `format: "port" \| "int" \| "nat" \| "duration" \| "number" \| "Number"`, or a number `default` | `number`                                                |
+| anything else                                                                                   | `string`                                                |
+| `nullable: true`, or `default: null`                                                            | appends `\| null` to whatever the above produced        |
+| `tsType: "..."` present                                                                         | overrides everything above — see below                  |
 
 The nullable rule composes with every other row: a nullable numeric key becomes `number | null` (as
 `redis.port` does in the example above, from `"nullable": true` with `format: "port"`), and a
@@ -119,7 +119,14 @@ and it replaces the inferred type entirely (nullable handling still applies on t
 injected **verbatim** into the generated `.ts` file with no validation:
 
 ```json
-{ "cursor": { "doc": "Pagination cursor", "default": "", "format": "my-cursor-format", "tsType": "0 | 1" } }
+{
+  "cursor": {
+    "doc": "Pagination cursor",
+    "default": "",
+    "format": "my-cursor-format",
+    "tsType": "0 | 1"
+  }
+}
 ```
 
 generates `"cursor": 0 | 1;` exactly as given. There is no check that the string you pass is valid

@@ -80,7 +80,9 @@ export function fileLayers(options: FileLayersOptions = {}): Source {
             `fileLayers() found no layer file for environment "${environment}" in ${dir}, and \`required\` is true.`
           );
         }
-        context.warn(`No layer file for environment "${environment}" in ${dir}; using schema defaults.`);
+        context.warn(
+          `No layer file for environment "${environment}" in ${dir}; using schema defaults.`
+        );
         return {};
       }
 

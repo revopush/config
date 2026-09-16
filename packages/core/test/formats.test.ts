@@ -13,13 +13,15 @@ function resolve(raw: string): boolean {
 
 describe("strict-boolean", () => {
   it("reads every affirmative spelling as true", () => {
-    for (const raw of ["true", "TRUE", "1", "yes", "on", " On "]) expect(resolve(raw), raw).to.equal(true);
+    for (const raw of ["true", "TRUE", "1", "yes", "on", " On "])
+      expect(resolve(raw), raw).to.equal(true);
   });
 
   // convict's own boolean format reads every spelling but "false" as true, which would have turned
   // ENABLE_ACCOUNT_REGISTRATION=0 into *enabled*.
   it("reads every negative spelling as false", () => {
-    for (const raw of ["false", "FALSE", "0", "no", "off", " OFF "]) expect(resolve(raw), raw).to.equal(false);
+    for (const raw of ["false", "FALSE", "0", "no", "off", " OFF "])
+      expect(resolve(raw), raw).to.equal(false);
   });
 
   it("rejects a spelling it cannot read rather than guessing", () => {
@@ -31,7 +33,10 @@ describe("strict-boolean", () => {
     // further call a no-op. If the `registered` guard were removed, each call below would
     // re-invoke convict.addFormat and this spy would observe it.
     const addFormat = vi.spyOn(convict, "addFormat");
-    expect(() => { registerFormats(); registerFormats(); }).to.not.throw();
+    expect(() => {
+      registerFormats();
+      registerFormats();
+    }).to.not.throw();
     expect(addFormat).not.toHaveBeenCalled();
     addFormat.mockRestore();
   });

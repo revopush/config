@@ -16,12 +16,17 @@ function stub(values: Record<string, string | undefined>, failing?: string) {
 describe("resolveVaultUri", () => {
   it("prefers the full URI over the legacy account name", () => {
     expect(
-      resolveVaultUri({ AZURE_KEYVAULT_URI: "https://v.vault.azure.net", AZURE_KEYVAULT_ACCOUNT: "other" })
+      resolveVaultUri({
+        AZURE_KEYVAULT_URI: "https://v.vault.azure.net",
+        AZURE_KEYVAULT_ACCOUNT: "other",
+      })
     ).to.equal("https://v.vault.azure.net");
   });
 
   it("builds a URI from the legacy account name", () => {
-    expect(resolveVaultUri({ AZURE_KEYVAULT_ACCOUNT: "myvault" })).to.equal("https://myvault.vault.azure.net");
+    expect(resolveVaultUri({ AZURE_KEYVAULT_ACCOUNT: "myvault" })).to.equal(
+      "https://myvault.vault.azure.net"
+    );
   });
 
   it("returns empty when neither is set, which disables the vault", () => {
@@ -38,7 +43,7 @@ describe("azureKeyVault", () => {
 
   // A vault entry that exists but is blank must not shadow a working environment variable.
   it("drops empty and undefined values", async () => {
-    const source = azureKeyVault({ client: stub({ "a": "", "b": undefined }) });
+    const source = azureKeyVault({ client: stub({ a: "", b: undefined }) });
     const resolved = await source.load(
       new Map([
         ["secret.a", "a"],
@@ -51,7 +56,7 @@ describe("azureKeyVault", () => {
   // A whitespace-only vault entry is the same class of misconfiguration as an empty string and
   // must not shadow a working environment variable either.
   it("drops whitespace-only values", async () => {
-    const source = azureKeyVault({ client: stub({ "a": "   " }) });
+    const source = azureKeyVault({ client: stub({ a: "   " }) });
     const resolved = await source.load(new Map([["secret.a", "a"]]));
     expect(resolved.size).to.equal(0);
   });
@@ -59,7 +64,7 @@ describe("azureKeyVault", () => {
   // Optional secrets are absent by design; a 404 must leave the environment variable in charge
   // rather than abort startup for every other secret too.
   it("treats a secret that is not in the vault as absent", async () => {
-    const source = azureKeyVault({ client: stub({ "present": "p" }) });
+    const source = azureKeyVault({ client: stub({ present: "p" }) });
     const resolved = await source.load(
       new Map([
         ["secret.present", "present"],
@@ -72,11 +77,16 @@ describe("azureKeyVault", () => {
 
   it("names the failing secret when a fetch rejects for any other reason", async () => {
     const source = azureKeyVault({ client: stub({}, "redis-key") });
-    await expect(source.load(new Map([["secret.redisKey", "redis-key"]]))).rejects.toThrow(/redis-key/);
+    await expect(source.load(new Map([["secret.redisKey", "redis-key"]]))).rejects.toThrow(
+      /redis-key/
+    );
   });
 
   it("holds nothing when no vault is configured", async () => {
-    const saved = { uri: process.env.AZURE_KEYVAULT_URI, account: process.env.AZURE_KEYVAULT_ACCOUNT };
+    const saved = {
+      uri: process.env.AZURE_KEYVAULT_URI,
+      account: process.env.AZURE_KEYVAULT_ACCOUNT,
+    };
     delete process.env.AZURE_KEYVAULT_URI;
     delete process.env.AZURE_KEYVAULT_ACCOUNT;
     try {
@@ -94,7 +104,10 @@ describe("azureKeyVault", () => {
 
   describe("required", () => {
     function withoutVaultEnv<T>(fn: () => T): T {
-      const saved = { uri: process.env.AZURE_KEYVAULT_URI, account: process.env.AZURE_KEYVAULT_ACCOUNT };
+      const saved = {
+        uri: process.env.AZURE_KEYVAULT_URI,
+        account: process.env.AZURE_KEYVAULT_ACCOUNT,
+      };
       delete process.env.AZURE_KEYVAULT_URI;
       delete process.env.AZURE_KEYVAULT_ACCOUNT;
       try {

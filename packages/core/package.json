@@ -7,16 +7,44 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "bin": { "revopush-config": "./dist/codegen/bin.cjs" },
-  "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "require": "./dist/index.cjs" },
-    "./testing": { "types": "./dist/testing/index.d.ts", "import": "./dist/testing/index.js", "require": "./dist/testing/index.cjs" }
+  "bin": {
+    "revopush-config": "./dist/codegen/bin.cjs"
   },
-  "files": ["dist", "README.md", "LICENSE"],
-  "engines": { "node": ">=20" },
-  "scripts": { "build": "tsup" },
-  "dependencies": { "convict": "^6.2.5" },
-  "devDependencies": { "@types/convict": "^6.1.6" },
-  "peerDependencies": { "vitest": ">=1" },
-  "peerDependenciesMeta": { "vitest": { "optional": true } }
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "import": "./dist/testing/index.js",
+      "require": "./dist/testing/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup"
+  },
+  "dependencies": {
+    "convict": "^6.2.5"
+  },
+  "devDependencies": {
+    "@types/convict": "^6.1.6"
+  },
+  "peerDependencies": {
+    "vitest": ">=1"
+  },
+  "peerDependenciesMeta": {
+    "vitest": {
+      "optional": true
+    }
+  }
 }

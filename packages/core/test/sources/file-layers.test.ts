@@ -9,7 +9,10 @@ import { Schema, SourceContext } from "../../src/types";
 const DIR = path.join(__dirname, "..", "fixtures", "layers");
 const schema: Schema = { redis: { host: { doc: "H", default: "localhost" } } };
 
-function context(dir: string | undefined, warn: (message: string) => void = () => {}): SourceContext {
+function context(
+  dir: string | undefined,
+  warn: (message: string) => void = () => {}
+): SourceContext {
   return { schema, dir, get: () => undefined, warn };
 }
 
@@ -27,13 +30,17 @@ describe("fileLayers source", () => {
   });
 
   it("skips a region file that does not exist", async () => {
-    const values = await fileLayers({ environment: "production", region: "apac" }).load(context(DIR));
+    const values = await fileLayers({ environment: "production", region: "apac" }).load(
+      context(DIR)
+    );
     expect((values.redis as Record<string, unknown>).host).to.equal("prod-redis");
   });
 
   it("returns nothing and warns when the environment matches no file", async () => {
     const warnings: string[] = [];
-    const values = await fileLayers({ environment: "nope" }).load(context(DIR, (m) => warnings.push(m)));
+    const values = await fileLayers({ environment: "nope" }).load(
+      context(DIR, (m) => warnings.push(m))
+    );
     expect(values).to.deep.equal({});
     expect(warnings).to.have.length(1);
     expect(warnings[0]).to.contain("nope");
@@ -50,16 +57,22 @@ describe("fileLayers source", () => {
   });
 
   it("prefers its own dir over the context dir", async () => {
-    const values = await fileLayers({ dir: DIR, environment: "production" }).load(context(undefined));
+    const values = await fileLayers({ dir: DIR, environment: "production" }).load(
+      context(undefined)
+    );
     expect((values.redis as Record<string, unknown>).host).to.equal("prod-redis");
   });
 
   it("fails clearly when no directory is available at all", () => {
-    expect(() => fileLayers({ environment: "production" }).load(context(undefined))).toThrow(ConfigError);
+    expect(() => fileLayers({ environment: "production" }).load(context(undefined))).toThrow(
+      ConfigError
+    );
   });
 
   it("replaces an existing array with an incoming object", async () => {
-    const values = await fileLayers({ environment: "arraytest", region: "object" }).load(context(DIR));
+    const values = await fileLayers({ environment: "arraytest", region: "object" }).load(
+      context(DIR)
+    );
     const origins = values.origins as unknown;
     expect(origins).to.deep.equal({ custom: "object" });
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- chai's `.false` getter has a side effect, not a no-op.
@@ -67,7 +80,9 @@ describe("fileLayers source", () => {
   });
 
   it("replaces an existing object with an incoming array", async () => {
-    const values = await fileLayers({ environment: "objecttest", region: "array" }).load(context(DIR));
+    const values = await fileLayers({ environment: "objecttest", region: "array" }).load(
+      context(DIR)
+    );
     const config = values.config as unknown;
     expect(config).to.deep.equal(["replaced", "with", "array"]);
   });
@@ -75,7 +90,9 @@ describe("fileLayers source", () => {
   it("replaces array wholesale rather than merging element-wise", async () => {
     // A list-valued setting merged element-wise is a silent data corruption,
     // so we verify that arrays replace completely: ["a","b","c"] overridden by ["x"] yields ["x"].
-    const values = await fileLayers({ environment: "arrayreplace", region: "short" }).load(context(DIR));
+    const values = await fileLayers({ environment: "arrayreplace", region: "short" }).load(
+      context(DIR)
+    );
     const items = values.items as unknown;
     expect(items).to.deep.equal(["x"]);
   });
@@ -117,7 +134,9 @@ describe("fileLayers source", () => {
   });
 
   it("does not throw when required and a file matched", async () => {
-    const values = await fileLayers({ environment: "production", required: true }).load(context(DIR));
+    const values = await fileLayers({ environment: "production", required: true }).load(
+      context(DIR)
+    );
     expect((values.redis as Record<string, unknown>).host).to.equal("prod-redis");
   });
 

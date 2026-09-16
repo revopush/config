@@ -30,7 +30,9 @@ export function testSecretSource(factory: (fixtures: SecretFixtures) => SecretSo
   });
 
   it("returns a value keyed by config key, not by secret name", async () => {
-    const resolved = await factory(FIXTURES).load(new Map([["secret.thing", "conformance-present"]]));
+    const resolved = await factory(FIXTURES).load(
+      new Map([["secret.thing", "conformance-present"]])
+    );
     expect(resolved.get("secret.thing")).to.equal("value");
   });
 
@@ -40,7 +42,9 @@ export function testSecretSource(factory: (fixtures: SecretFixtures) => SecretSo
   });
 
   it("rejects when the store cannot be read, so an outage stops startup", async () => {
-    await expect(factory(FIXTURES).load(new Map([["secret.thing", FIXTURES.failing]]))).rejects.toThrow();
+    await expect(
+      factory(FIXTURES).load(new Map([["secret.thing", FIXTURES.failing]]))
+    ).rejects.toThrow();
   });
 
   it("returns an empty map for an empty request without consulting the store", async () => {

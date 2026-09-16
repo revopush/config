@@ -72,7 +72,9 @@ export async function runTypes(argv: string[], io: CliIO = console): Promise<num
   try {
     expected = emitTypes(JSON.parse(fs.readFileSync(schemaFile, "utf8")), { interfaceName });
   } catch (error) {
-    io.error(`Could not read ${schemaFile}: ${error instanceof Error ? error.message : String(error)}`);
+    io.error(
+      `Could not read ${schemaFile}: ${error instanceof Error ? error.message : String(error)}`
+    );
     return 1;
   }
 

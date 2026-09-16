@@ -12,7 +12,10 @@ const PLACEHOLDER = /\{([^}]+)\}/g;
  * store rejects or reports as not found.
  */
 function kebab(name: string): string {
-  return name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/\./g, "-").toLowerCase();
+  return name
+    .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+    .replace(/\./g, "-")
+    .toLowerCase();
 }
 
 /**

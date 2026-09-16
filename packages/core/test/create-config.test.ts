@@ -87,7 +87,10 @@ describe("createConfig", () => {
 
   it("lets an environment variable beat the file", async () => {
     const config = build({
-      sources: [fileLayers({ environment: "staging" }), env({ from: { APPTEST_REDIS_HOST: "env-redis" } })],
+      sources: [
+        fileLayers({ environment: "staging" }),
+        env({ from: { APPTEST_REDIS_HOST: "env-redis" } }),
+      ],
       secretSource: stubSecrets({ "api-key": "k" }),
     });
     await config.init();
@@ -96,7 +99,10 @@ describe("createConfig", () => {
 
   it("lets a secret source beat a stale environment variable", async () => {
     const config = build({
-      sources: [fileLayers({ environment: "staging" }), env({ from: { APPTEST_API_KEY: "from-env" } })],
+      sources: [
+        fileLayers({ environment: "staging" }),
+        env({ from: { APPTEST_API_KEY: "from-env" } }),
+      ],
       secretSource: stubSecrets({ "api-key": "from-vault" }),
     });
     await config.init();
@@ -105,7 +111,10 @@ describe("createConfig", () => {
 
   it("falls back to the environment variable for a secret the source does not hold", async () => {
     const config = build({
-      sources: [fileLayers({ environment: "staging" }), env({ from: { APPTEST_API_KEY: "from-env" } })],
+      sources: [
+        fileLayers({ environment: "staging" }),
+        env({ from: { APPTEST_API_KEY: "from-env" } }),
+      ],
       secretSource: stubSecrets({}),
     });
     await config.init();
@@ -258,14 +267,21 @@ describe("createConfig", () => {
 
   it("explains where a value came from", async () => {
     const config = build({
-      sources: [fileLayers({ environment: "staging" }), env({ from: { APPTEST_REDIS_HOST: "env-redis" } })],
+      sources: [
+        fileLayers({ environment: "staging" }),
+        env({ from: { APPTEST_REDIS_HOST: "env-redis" } }),
+      ],
       secretSource: stubSecrets({ "api-key": "k" }),
     });
     await config.init();
 
     const provenance = config.explain("redis.host");
     expect(provenance.winner).to.equal("env");
-    expect(provenance.layers.map((layer) => layer.source)).to.deep.equal(["default", "files", "env"]);
+    expect(provenance.layers.map((layer) => layer.source)).to.deep.equal([
+      "default",
+      "files",
+      "env",
+    ]);
   });
 
   it("redacts sensitive keys in toJSON", async () => {

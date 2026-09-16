@@ -16,7 +16,9 @@ describe("emitTypes", () => {
   });
 
   it("emits boolean for the strict-boolean format and for a boolean default", () => {
-    expect(line({ a: { doc: "A", format: "strict-boolean", default: false } }, "a")).to.equal(`"a": boolean;`);
+    expect(line({ a: { doc: "A", format: "strict-boolean", default: false } }, "a")).to.equal(
+      `"a": boolean;`
+    );
     expect(line({ b: { doc: "B", default: true } }, "b")).to.equal(`"b": boolean;`);
   });
 
@@ -31,14 +33,16 @@ describe("emitTypes", () => {
   // `string | null`, so every arithmetic use of it failed to compile against a correct schema.
   it("emits number and boolean for convict's Number and Boolean type formats", () => {
     for (const format of ["number", "Number"]) {
-      expect(line({ a: { doc: "A", format, default: null, nullable: true } }, "a"), format).to.equal(
-        `"a": number | null;`
-      );
+      expect(
+        line({ a: { doc: "A", format, default: null, nullable: true } }, "a"),
+        format
+      ).to.equal(`"a": number | null;`);
     }
     for (const format of ["boolean", "Boolean"]) {
-      expect(line({ a: { doc: "A", format, default: null, nullable: true } }, "a"), format).to.equal(
-        `"a": boolean | null;`
-      );
+      expect(
+        line({ a: { doc: "A", format, default: null, nullable: true } }, "a"),
+        format
+      ).to.equal(`"a": boolean | null;`);
     }
   });
 
@@ -59,7 +63,9 @@ describe("emitTypes", () => {
   });
 
   it("lets tsType override everything, which is the escape hatch for a custom format", () => {
-    expect(line({ a: { doc: "A", format: "my-format", default: "", tsType: "0 | 1" } }, "a")).to.equal(`"a": 0 | 1;`);
+    expect(
+      line({ a: { doc: "A", format: "my-format", default: "", tsType: "0 | 1" } }, "a")
+    ).to.equal(`"a": 0 | 1;`);
   });
 
   it("carries the doc across as a comment", () => {
@@ -74,7 +80,9 @@ describe("emitTypes", () => {
   });
 
   it("accepts a custom interface name", () => {
-    expect(emitTypes({ a: { doc: "A", default: "" } }, { interfaceName: "Keys" })).to.contain("export interface Keys {");
+    expect(emitTypes({ a: { doc: "A", default: "" } }, { interfaceName: "Keys" })).to.contain(
+      "export interface Keys {"
+    );
   });
 
   it("emits an empty interface for an empty schema", () => {
@@ -84,15 +92,18 @@ describe("emitTypes", () => {
   it("applies nullable to tsType escape hatch with nullable: true", () => {
     // The escape hatch must not opt out of nullability: tsType chooses the base type,
     // but nullable handling still applies afterward.
-    expect(line({ a: { doc: "A", format: "port", default: 1, nullable: true, tsType: "CustomPort" } }, "a")).to.equal(
-      `"a": CustomPort | null;`
-    );
+    expect(
+      line(
+        { a: { doc: "A", format: "port", default: 1, nullable: true, tsType: "CustomPort" } },
+        "a"
+      )
+    ).to.equal(`"a": CustomPort | null;`);
   });
 
   it("applies nullable to tsType escape hatch with null default", () => {
-    expect(line({ a: { doc: "A", format: "port", default: null, tsType: "CustomPort" } }, "a")).to.equal(
-      `"a": CustomPort | null;`
-    );
+    expect(
+      line({ a: { doc: "A", format: "port", default: null, tsType: "CustomPort" } }, "a")
+    ).to.equal(`"a": CustomPort | null;`);
   });
 
   it("escapes */ in doc comments to prevent early termination", () => {

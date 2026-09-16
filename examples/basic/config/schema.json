@@ -1,4 +1,9 @@
 {
   "port": { "doc": "HTTP port", "format": "port", "default": 3000, "env": "PORT" },
-  "logLevel": { "doc": "Log level", "format": ["debug", "info", "warn"], "default": "info", "env": "LOG_LEVEL" }
+  "logLevel": {
+    "doc": "Log level",
+    "format": ["debug", "info", "warn"],
+    "default": "info",
+    "env": "LOG_LEVEL"
+  }
 }

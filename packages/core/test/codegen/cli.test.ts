@@ -41,13 +41,18 @@ describe("revopush-config types", () => {
     const root = scratch();
     const out = path.join(root, "keys.ts");
     await runTypes(["--dir", root, "--out", out], silent);
-    fs.writeFileSync(path.join(root, "schema.json"), JSON.stringify({ b: { doc: "B", default: "x" } }));
+    fs.writeFileSync(
+      path.join(root, "schema.json"),
+      JSON.stringify({ b: { doc: "B", default: "x" } })
+    );
     expect(await runTypes(["--dir", root, "--out", out, "--check"], silent)).to.equal(1);
   });
 
   it("exits non-zero in check mode when the file is missing entirely", async () => {
     const root = scratch();
-    expect(await runTypes(["--dir", root, "--out", path.join(root, "absent.ts"), "--check"], silent)).to.equal(1);
+    expect(
+      await runTypes(["--dir", root, "--out", path.join(root, "absent.ts"), "--check"], silent)
+    ).to.equal(1);
   });
 
   it("does not write anything in check mode", async () => {
@@ -119,7 +124,10 @@ describe("revopush-config types", () => {
   it("exits non-zero when --out is given no value", async () => {
     const root = scratch();
     const errors: string[] = [];
-    const code = await runTypes(["--dir", root, "--out"], { log: () => {}, error: (m) => errors.push(m) });
+    const code = await runTypes(["--dir", root, "--out"], {
+      log: () => {},
+      error: (m) => errors.push(m),
+    });
     expect(code).to.equal(1);
     expect(errors.join(" ")).to.contain("--out");
   });
@@ -127,7 +135,10 @@ describe("revopush-config types", () => {
   it("exits non-zero and names --out when given --check as its value", async () => {
     const root = scratch();
     const errors: string[] = [];
-    const code = await runTypes(["--dir", root, "--out", "--check"], { log: () => {}, error: (m) => errors.push(m) });
+    const code = await runTypes(["--dir", root, "--out", "--check"], {
+      log: () => {},
+      error: (m) => errors.push(m),
+    });
     expect(code).to.equal(1);
     // Verify the error names --out as required (from "Both --dir and --out are required")
     expect(errors.join(" ")).to.contain("Both --dir and --out are required");
@@ -190,24 +201,39 @@ describe("revopush-config types", () => {
       const outputFile = path.join(tempDir, "keys.ts");
 
       // First, generate the file
-      const generateResult = spawnSync(symlinkPath, ["types", "--dir", schemaDir, "--out", outputFile], {
-        encoding: "utf8",
-      });
+      const generateResult = spawnSync(
+        symlinkPath,
+        ["types", "--dir", schemaDir, "--out", outputFile],
+        {
+          encoding: "utf8",
+        }
+      );
       expect(generateResult.status).to.equal(0);
       expect(fs.existsSync(outputFile)).to.equal(true);
 
       // Then, verify it with --check
-      const checkResult = spawnSync(symlinkPath, ["types", "--dir", schemaDir, "--out", outputFile, "--check"], {
-        encoding: "utf8",
-      });
+      const checkResult = spawnSync(
+        symlinkPath,
+        ["types", "--dir", schemaDir, "--out", outputFile, "--check"],
+        {
+          encoding: "utf8",
+        }
+      );
       expect(checkResult.status).to.equal(0);
       expect(checkResult.stdout).to.contain("up to date");
 
       // Now corrupt the schema and verify --check fails
-      fs.writeFileSync(path.join(schemaDir, "schema.json"), JSON.stringify({ b: { doc: "B", default: "x" } }));
-      const staleResult = spawnSync(symlinkPath, ["types", "--dir", schemaDir, "--out", outputFile, "--check"], {
-        encoding: "utf8",
-      });
+      fs.writeFileSync(
+        path.join(schemaDir, "schema.json"),
+        JSON.stringify({ b: { doc: "B", default: "x" } })
+      );
+      const staleResult = spawnSync(
+        symlinkPath,
+        ["types", "--dir", schemaDir, "--out", outputFile, "--check"],
+        {
+          encoding: "utf8",
+        }
+      );
       expect(staleResult.status).to.equal(1);
       expect(staleResult.stderr).to.contain("out of date");
     } finally {

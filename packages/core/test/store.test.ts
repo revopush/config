@@ -103,7 +103,10 @@ describe("Store", () => {
       expect.fail("validate() should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigValidationError);
-      expect((error as ConfigValidationError).keys.sort()).to.deep.equal(["redis.hsot", "redis.port"]);
+      expect((error as ConfigValidationError).keys.sort()).to.deep.equal([
+        "redis.hsot",
+        "redis.port",
+      ]);
     }
   });
 
@@ -115,7 +118,10 @@ describe("Store", () => {
       expect.fail("validate() should have thrown");
     } catch (error) {
       expect(error).toBeInstanceOf(ConfigValidationError);
-      expect((error as ConfigValidationError).keys.sort()).to.deep.equal(["api.https", "redis.port"]);
+      expect((error as ConfigValidationError).keys.sort()).to.deep.equal([
+        "api.https",
+        "redis.port",
+      ]);
     }
   });
 

@@ -1,5 +1,9 @@
 {
-  "storageAccount": { "doc": "Storage account", "default": "demoaccount", "env": "STORAGE_ACCOUNT" },
+  "storageAccount": {
+    "doc": "Storage account",
+    "default": "demoaccount",
+    "env": "STORAGE_ACCOUNT"
+  },
   "secret": {
     "apiKey": { "doc": "API key", "default": "", "env": "API_KEY", "sensitive": true },
     "storageKey": {

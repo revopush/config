@@ -11,7 +11,11 @@ const schema = {
 
 describe("leaves", () => {
   it("treats any node carrying `default` as a leaf and returns dotted paths", () => {
-    expect(leaves(schema).map((l) => l.path)).to.deep.equal(["api.port", "api.nested.deep", "flag"]);
+    expect(leaves(schema).map((l) => l.path)).to.deep.equal([
+      "api.port",
+      "api.nested.deep",
+      "flag",
+    ]);
   });
 
   it("returns the entry beside each path", () => {

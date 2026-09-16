@@ -23,6 +23,9 @@ const config = createConfig({
 });
 await config.init();
 
-assert(config.get("secret.storageKey") === "value-of-storage-demoaccount", "template should interpolate");
+assert(
+  config.get("secret.storageKey") === "value-of-storage-demoaccount",
+  "template should interpolate"
+);
 assert(!JSON.stringify(config.toJSON()).includes("value-of"), "toJSON must redact secrets");
 console.log("azure:", config.toJSON());

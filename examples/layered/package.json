@@ -1,1 +1,8 @@
-{ "name": "@revopush/config-example-layered", "private": true, "type": "module", "dependencies": { "@revopush/config": "*" } }
+{
+  "name": "@revopush/config-example-layered",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@revopush/config": "*"
+  }
+}

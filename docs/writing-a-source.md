@@ -51,7 +51,8 @@ export function httpJson(url: string, options: { name?: string } = {}): Source {
       // from. The key must be declared in the schema; get() reads through the same store
       // sources merge into, and an undeclared key throws.
       const token = context.get("apiToken");
-      const headers = typeof token === "string" && token ? { authorization: `Bearer ${token}` } : {};
+      const headers =
+        typeof token === "string" && token ? { authorization: `Bearer ${token}` } : {};
       const response = await fetch(url, { headers });
       if (!response.ok) {
         throw new Error(`GET ${url} -> ${response.status} ${response.statusText}`);
@@ -98,7 +99,7 @@ is what it printed.
 
 ## Reading an earlier layer
 
-`SourceContext.get(key)` reads whatever value the layers merged *before* this source hold for that
+`SourceContext.get(key)` reads whatever value the layers merged _before_ this source hold for that
 key — the schema default if nothing has set it yet, or whatever an earlier source in the `sources`
 array supplied. It is how a source that needs configuration of its own (an endpoint, a token, a
 tenant ID) gets it from the same layering system instead of inventing a separate way to be

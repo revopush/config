@@ -2,7 +2,7 @@
 
 ## From convict
 
-A convict schema already works here largely unchanged — the schema format this library uses *is*
+A convict schema already works here largely unchanged — the schema format this library uses _is_
 convict's, JSON with `default`/`doc`/`format`/`env`/`sensitive` leaves. Migrating is mechanical:
 
 1. **Move the schema to `schema.json`.** If it currently lives inline in a `.ts`/`.js` file, write
@@ -82,7 +82,7 @@ throw rather than return `undefined` for a key that isn't there (see below).
 3. **A schema is now required, and unknown keys fail rather than returning `undefined`.**
    node-config has no schema: reading a key that was never set returns `undefined`, and a typo in a
    config file is silently ignored. Here every key `config.get()` can return must be declared in
-   `schema.json` with a `default`, and a key present in a layer file but *not* declared in the
+   `schema.json` with a `default`, and a key present in a layer file but _not_ declared in the
    schema fails `init()` with `ConfigValidationError` rather than being silently accepted. Write a
    schema entry for every key node-config's files currently set — this is the one non-mechanical
    part of the migration, and it is also what catches the class of bug node-config lets through: a

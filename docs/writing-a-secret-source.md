@@ -33,7 +33,7 @@ the store beats a stale variable left lying around.
    unreachable store is indistinguishable from an outage, and an outage must stop startup rather
    than silently fall back to environment variables for secrets that do exist in the store.
 3. **Key the result by config key, not by secret name.** `load()` receives `config key -> secret
-   name`; it must return `config key -> value`, using the same keys it was given (e.g.
+name`; it must return `config key -> value`, using the same keys it was given (e.g.
    `"secret.redisKey"`), not the store's own names (e.g. `"redis-key"`). `createConfig` matches the
    result back to the schema by config key.
 
