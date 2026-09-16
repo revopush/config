@@ -28,8 +28,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run format:check
-      - run: npm run lint
+      # Build first: the azure package imports @revopush/config, whose types resolve to
+      # packages/core/dist. Without that, type-aware lint rules and tsc see an unresolved
+      # module and the run drowns in no-unsafe-* errors on a clean checkout.
       - run: npm run build
+      - run: npm run lint
       - run: npm run typecheck
       - run: npm test
       - run: npm run examples
