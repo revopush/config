@@ -21,15 +21,26 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./testing": {
-      "types": "./dist/testing/index.d.ts",
-      "import": "./dist/testing/index.js",
-      "require": "./dist/testing/index.cjs"
-    }
+      "import": {
+        "types": "./dist/testing/index.d.ts",
+        "default": "./dist/testing/index.js"
+      },
+      "require": {
+        "types": "./dist/testing/index.d.cts",
+        "default": "./dist/testing/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
@@ -55,5 +66,24 @@
     "vitest": {
       "optional": true
     }
+  },
+  "keywords": [
+    "config",
+    "configuration",
+    "convict",
+    "schema",
+    "validation",
+    "env",
+    "environment",
+    "secrets",
+    "12-factor",
+    "layered",
+    "typescript",
+    "node"
+  ],
+  "author": "Revopush",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
   }
 }

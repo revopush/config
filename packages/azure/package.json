@@ -18,10 +18,16 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
@@ -40,5 +46,22 @@
   "dependencies": {
     "@azure/identity": "^4.9.1",
     "@azure/keyvault-secrets": "^4.9.0"
+  },
+  "keywords": [
+    "azure",
+    "key-vault",
+    "keyvault",
+    "secrets",
+    "secret-provider",
+    "config",
+    "configuration",
+    "revopush",
+    "typescript",
+    "node"
+  ],
+  "author": "Revopush",
+  "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
   }
 }
