@@ -177,4 +177,12 @@ describe("Store", () => {
     expect((dumped.secret as Record<string, unknown>).apiKey).to.equal("[REDACTED]");
     expect((dumped.redis as Record<string, unknown>).host).to.equal("localhost");
   });
+
+  // A forgotten `sensitive: true` must not be the only thing standing between a vault value and
+  // whatever logged toJSON(): everything under the secret. node is a secret by definition.
+  it("redacts a key under the secret. node even without an explicit sensitive flag", () => {
+    const store = new Store({ secret: { plain: { doc: "P", default: "" } } });
+    store.set("vault", "secret.plain", "hunter2");
+    expect(JSON.stringify(store.toJSON())).to.not.contain("hunter2");
+  });
 });

@@ -6,3 +6,6 @@ export const SECRET_NODE = "secret";
 
 /** Provenance name for values that came from a schema default rather than a source. */
 export const DEFAULT_LAYER = "default";
+
+/** Name of the boolean format this library registers. Use it as `format` in a schema. */
+export const STRICT_BOOLEAN = "strict-boolean";

@@ -27,6 +27,27 @@ describe("emitTypes", () => {
     expect(line({ b: { doc: "B", default: 5 } }, "b")).to.equal(`"b": number;`);
   });
 
+  // convict's own type formats. Without these a nullable `format: "Number"` key was typed
+  // `string | null`, so every arithmetic use of it failed to compile against a correct schema.
+  it("emits number and boolean for convict's Number and Boolean type formats", () => {
+    for (const format of ["number", "Number"]) {
+      expect(line({ a: { doc: "A", format, default: null, nullable: true } }, "a"), format).to.equal(
+        `"a": number | null;`
+      );
+    }
+    for (const format of ["boolean", "Boolean"]) {
+      expect(line({ a: { doc: "A", format, default: null, nullable: true } }, "a"), format).to.equal(
+        `"a": boolean | null;`
+      );
+    }
+  });
+
+  // An empty union has no members, and `"a": ;` does not parse — the generated file would not
+  // compile and --check would report nothing wrong.
+  it("falls back to string for an enum format with no members", () => {
+    expect(line({ a: { doc: "A", format: [], default: "x" } }, "a")).to.equal(`"a": string;`);
+  });
+
   it("emits string for anything else", () => {
     expect(line({ a: { doc: "A", default: "" } }, "a")).to.equal(`"a": string;`);
   });

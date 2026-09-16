@@ -122,11 +122,18 @@ export class Store {
     };
   }
 
-  /** The resolved configuration with `sensitive` keys redacted. */
+  /**
+   * The resolved configuration with secrets redacted.
+   *
+   * A key is redacted when it is marked `sensitive` *or* when it lives under the `secret.` node:
+   * everything under that node is by definition a secret, and requiring `sensitive: true` on each
+   * one would make a forgotten flag leak a vault value into whatever logged this.
+   */
   toJSON(): Record<string, unknown> {
     const dumped: Record<string, unknown> = {};
     for (const [path, entry] of this.entries) {
-      setPath(dumped, path, entry.sensitive ? "[REDACTED]" : this.get(path));
+      const redact = entry.sensitive || path.startsWith(SECRET_PREFIX);
+      setPath(dumped, path, redact ? "[REDACTED]" : this.get(path));
     }
     return dumped;
   }

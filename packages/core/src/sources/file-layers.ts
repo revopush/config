@@ -32,8 +32,17 @@ const defaultNames = (environment: string, region: string): string[] =>
 const isPlainObject = (value: unknown): value is SourceValues =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
+/**
+ * Keys that must never be written through. `JSON.parse` happily produces an *own* `__proto__`
+ * property, and assigning it runs the prototype setter — so a layer file containing
+ * `{"__proto__": {"x": 1}}` would otherwise make `merge` recurse into `Object.prototype` and set
+ * `x` on every object in the process.
+ */
+const FORBIDDEN_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
 function merge(target: SourceValues, source: SourceValues): SourceValues {
   for (const [key, value] of Object.entries(source)) {
+    if (FORBIDDEN_KEYS.has(key)) continue;
     const existing = target[key];
     if (isPlainObject(value) && isPlainObject(existing)) {
       merge(existing as SourceValues, value as SourceValues);

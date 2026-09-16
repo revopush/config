@@ -1,7 +1,7 @@
 import convict from "convict";
+import { STRICT_BOOLEAN } from "./constants";
 
-/** Name of the boolean format this library registers. Use it as `format` in a schema. */
-export const STRICT_BOOLEAN = "strict-boolean";
+export { STRICT_BOOLEAN };
 
 const TRUE_VALUES = ["true", "1", "yes", "on"];
 const FALSE_VALUES = ["false", "0", "no", "off"];

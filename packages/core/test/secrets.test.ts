@@ -16,6 +16,15 @@ const schema = {
 const read = (key: string) => (key === "azure.storageAccount" ? "myaccount" : undefined);
 
 describe("secretNames", () => {
+  // A dotted name is rejected by stores such as Azure Key Vault, whose names must match
+  // ^[0-9a-zA-Z-]+$ — which reads as "not found" and silently falls back to the env var.
+  it("flattens a nested secret key to a dashed name a store will accept", () => {
+    const nested = { secret: { redis: { password: { doc: "P", default: "" } } } };
+    expect(secretNames(nested, ["secret.redis.password"], read).get("secret.redis.password")).to.equal(
+      "redis-password"
+    );
+  });
+
   it("derives a kebab-case name from a camelCase key", () => {
     const names = secretNames(schema, ["secret.redisKey", "secret.sessionSecretPrevious"], read);
     expect(names.get("secret.redisKey")).to.equal("redis-key");

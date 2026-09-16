@@ -46,8 +46,10 @@ env var takes over) while making sure a broken store is never mistaken for "noth
 The name your source is asked to resolve is not the config key — it is derived, unless the schema
 entry overrides it with `secretName`:
 
-- **Default: kebab-case the key's last segment.** `secret.redisKey` asks for `"redis-key"`;
-  `secret.password` asks for `"password"` unchanged.
+- **Default: kebab-case the key below `secret.`, with dots flattened to dashes.**
+  `secret.redisKey` asks for `"redis-key"`; `secret.password` asks for `"password"` unchanged; a
+  nested `secret.redis.password` asks for `"redis-password"`, not the dotted `"redis.password"` —
+  stores such as Azure Key Vault only accept names matching `^[0-9a-zA-Z-]+$`.
 - **The kebab-case conversion glues together runs of capital letters.** It only inserts a dash
   before an uppercase letter that follows a lowercase letter or digit — so a name with two adjacent
   capitals, like `awsIAMKey`, becomes `aws-iamkey`, not `aws-iam-key`. Likewise

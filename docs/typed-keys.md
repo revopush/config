@@ -102,8 +102,8 @@ type:
 | schema | TypeScript |
 |---|---|
 | `format` is an array, e.g. `["debug", "info", "warn"]` | union of string literals: `"debug" \| "info" \| "warn"` |
-| `format: "strict-boolean"`, or a boolean `default` | `boolean` |
-| `format: "port" \| "int" \| "nat" \| "duration"`, or a number `default` | `number` |
+| `format: "strict-boolean" \| "boolean" \| "Boolean"`, or a boolean `default` | `boolean` |
+| `format: "port" \| "int" \| "nat" \| "duration" \| "number" \| "Number"`, or a number `default` | `number` |
 | anything else | `string` |
 | `nullable: true`, or `default: null` | appends `\| null` to whatever the above produced |
 | `tsType: "..."` present | overrides everything above — see below |

@@ -1,12 +1,26 @@
+import { STRICT_BOOLEAN } from "../constants";
 import { leaves } from "../schema-walk";
 import { Schema, SchemaEntry } from "../types";
 
-const NUMERIC_FORMATS = new Set(["port", "int", "nat", "duration"]);
+// convict's numeric formats, plus its `Number` type format in both spellings it accepts.
+const NUMERIC_FORMATS = new Set(["port", "int", "nat", "duration", "number", "Number"]);
+// This library's strict boolean, plus convict's own `Boolean` type format.
+const BOOLEAN_FORMATS = new Set([STRICT_BOOLEAN, "boolean", "Boolean"]);
 
 function inferType(entry: SchemaEntry): string {
-  if (Array.isArray(entry.format)) return entry.format.map((value) => JSON.stringify(value)).join(" | ");
-  if (entry.format === "strict-boolean" || typeof entry.default === "boolean") return "boolean";
-  if (NUMERIC_FORMATS.has(String(entry.format)) || typeof entry.default === "number") return "number";
+  if (Array.isArray(entry.format)) {
+    // An enum with no members has nothing to name; falling back to `string` keeps the generated
+    // file compiling instead of emitting a bare `"key": ;`.
+    if (entry.format.length === 0) return "string";
+    return entry.format.map((value) => JSON.stringify(value)).join(" | ");
+  }
+  const format = typeof entry.format === "string" ? entry.format : undefined;
+  if ((format !== undefined && BOOLEAN_FORMATS.has(format)) || typeof entry.default === "boolean") {
+    return "boolean";
+  }
+  if ((format !== undefined && NUMERIC_FORMATS.has(format)) || typeof entry.default === "number") {
+    return "number";
+  }
   return "string";
 }
 

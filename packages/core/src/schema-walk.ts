@@ -36,9 +36,16 @@ export function getPath(object: Record<string, unknown>, path: string): unknown 
   return current;
 }
 
-/** Writes a dotted path, creating intermediate objects. */
+/** Segments that would write through the prototype chain rather than onto the object itself. */
+const FORBIDDEN_SEGMENTS = new Set(["__proto__", "constructor", "prototype"]);
+
+/**
+ * Writes a dotted path, creating intermediate objects. A path containing a segment that would
+ * reach the prototype chain is refused rather than trusted.
+ */
 export function setPath(object: Record<string, unknown>, path: string, value: unknown): void {
   const segments = path.split(".");
+  if (segments.some((segment) => FORBIDDEN_SEGMENTS.has(segment))) return;
   const last = segments.pop()!;
   let current = object;
   for (const segment of segments) {

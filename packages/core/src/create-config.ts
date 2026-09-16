@@ -39,15 +39,20 @@ export function createConfig<K = Record<string, any>>(options: CreateConfigOptio
       warn: (message) => options.onWarning?.(message),
     };
 
-    const sources: Source[] = options.sources ?? [fileLayers(), env()];
+    // `fileLayers()` needs a directory, so it is only a sensible default when one was given: with
+    // an inline `schema` it would throw on every init() instead of falling back to defaults + env.
+    const sources: Source[] = options.sources ?? (hasSchemaDir ? [fileLayers(), env()] : [env()]);
+
+    // The secret source shares the provenance namespace, so it takes part in the uniqueness check:
+    // a collision would put two layers under one name in explain() and make `winner` ambiguous.
     const seenSourceNames = new Set<string>();
-    for (const source of sources) {
-      if (seenSourceNames.has(source.name)) {
+    for (const { name } of [...sources, ...(options.secretSource ? [options.secretSource] : [])]) {
+      if (seenSourceNames.has(name)) {
         throw new ConfigError(
-          `Two sources are both named "${source.name}". Source.name must be unique within one config.`
+          `Two sources are both named "${name}". Source.name must be unique within one config.`
         );
       }
-      seenSourceNames.add(source.name);
+      seenSourceNames.add(name);
     }
 
     for (const source of sources) {
@@ -112,5 +117,10 @@ export function createConfig<K = Record<string, any>>(options: CreateConfigOptio
 function readSchema(dir: string): Schema {
   const file = path.join(dir, "schema.json");
   if (!fs.existsSync(file)) throw new ConfigError(`No schema.json in ${dir}.`);
-  return JSON.parse(fs.readFileSync(file, "utf8")) as Schema;
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8")) as Schema;
+  } catch (cause) {
+    const detail = cause instanceof Error ? cause.message : String(cause);
+    throw new ConfigError(`Could not parse ${file}: ${detail}`);
+  }
 }

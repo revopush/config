@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import * as fs from "node:fs";
+import * as os from "node:os";
 import * as path from "node:path";
 import { ConfigError } from "../../src/errors";
 import { fileLayers } from "../../src/sources/file-layers";
@@ -116,5 +118,25 @@ describe("fileLayers source", () => {
   it("does not throw when required and a file matched", async () => {
     const values = await fileLayers({ environment: "production", required: true }).load(context(DIR));
     expect((values.redis as Record<string, unknown>).host).to.equal("prod-redis");
+  });
+
+  // `JSON.parse` produces an *own* `__proto__` key, and assigning it runs the prototype setter, so
+  // a naive recursive merge walks into Object.prototype and poisons every object in the process.
+  it("does not let a layer file write through the prototype chain", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "layers-proto-"));
+    try {
+      fs.writeFileSync(
+        path.join(dir, "dev.json"),
+        '{"__proto__": {"polluted": "yes"}, "constructor": {"also": "no"}, "redis": {"host": "h"}}'
+      );
+      const values = await fileLayers({ dir }).load(context(dir));
+      expect(({} as Record<string, unknown>).polluted).to.equal(undefined);
+      expect(Object.prototype.hasOwnProperty.call(values, "__proto__")).to.equal(false);
+      // The legitimate keys in the same file are still merged.
+      expect((values.redis as Record<string, unknown>).host).to.equal("h");
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+      delete (Object.prototype as Record<string, unknown>).polluted;
+    }
   });
 });

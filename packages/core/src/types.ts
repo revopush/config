@@ -9,7 +9,11 @@ export interface SchemaEntry {
   env?: string;
   sensitive?: boolean;
   nullable?: boolean;
-  /** The name this secret has in its store. Defaults to the key's last segment in kebab-case. */
+  /**
+   * The name this secret has in its store. Defaults to the key below `secret.` in kebab-case with
+   * dots flattened to dashes: `secret.redisKey` -> `redis-key`, `secret.redis.password` ->
+   * `redis-password`.
+   */
   secretName?: string;
   /** Overrides the emitted TypeScript type. The escape hatch for a custom format. */
   tsType?: string;
@@ -76,7 +80,10 @@ export interface CreateConfigOptions {
   schemaDir?: string;
   /** A parsed schema, for programmatic use. Mutually exclusive with `schemaDir`. */
   schema?: Schema;
-  /** Value sources, lowest precedence first. Defaults to `[fileLayers(), env()]`. */
+  /**
+   * Value sources, lowest precedence first. Defaults to `[fileLayers(), env()]` when `schemaDir`
+   * is given, and to `[env()]` for an inline `schema`, which has no directory for `fileLayers()`.
+   */
   sources?: Source[];
   /** Resolves the secrets the sources declare. Without one, secrets come from their env vars. */
   secretSource?: SecretSource;
