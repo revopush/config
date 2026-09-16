@@ -64,15 +64,15 @@ These guides live in the [repository](../../README.md), so the links below only 
 you're browsing the source rather than the npm page:
 
 - [Root README](../../README.md) — concepts and links.
-- [`docs/layering.md`](../../docs/layering.md) — precedence, strict booleans, requiring a layer
+- [`docs/layering.md`](https://github.com/revopush/config/blob/main/docs/layering.md) — precedence, strict booleans, requiring a layer
   file to exist, unknown-key rejection, `explain()`.
-- [`docs/writing-a-source.md`](../../docs/writing-a-source.md) — the `Source` interface and a
+- [`docs/writing-a-source.md`](https://github.com/revopush/config/blob/main/docs/writing-a-source.md) — the `Source` interface and a
   worked example.
-- [`docs/writing-a-secret-source.md`](../../docs/writing-a-secret-source.md) — the `SecretSource`
+- [`docs/writing-a-secret-source.md`](https://github.com/revopush/config/blob/main/docs/writing-a-secret-source.md) — the `SecretSource`
   interface and a worked example.
-- [`docs/typed-keys.md`](../../docs/typed-keys.md) — generating and using the `ConfigKeys`
+- [`docs/typed-keys.md`](https://github.com/revopush/config/blob/main/docs/typed-keys.md) — generating and using the `ConfigKeys`
   interface, the mapping table, and `--check` in CI.
-- [`docs/migrating.md`](../../docs/migrating.md) — from convict or node-config.
+- [`docs/migrating.md`](https://github.com/revopush/config/blob/main/docs/migrating.md) — from convict or node-config.
 - [`@revopush/config-azure-keyvault`](../azure/README.md) — the Azure Key Vault secret provider.
 
 ## License

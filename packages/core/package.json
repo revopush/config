@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "description": "Layered configuration for Node services: schema-validated, per-environment and per-region, with pluggable value sources and secret providers.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/revopush/config.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://revopush.org/",
+  "bugs": {
+    "url": "https://github.com/revopush/config/issues"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",

@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "description": "Azure Key Vault secret provider for @revopush/config.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/revopush/config.git",
+    "directory": "packages/azure"
+  },
+  "homepage": "https://revopush.org/",
+  "bugs": {
+    "url": "https://github.com/revopush/config/issues"
+  },
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
