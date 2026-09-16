@@ -3,3 +3,6 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .idea/
+
+# npm auth tokens and registry config, at any depth. Never commit these.
+.npmrc
