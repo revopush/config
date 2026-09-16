@@ -8,12 +8,16 @@ import { SecretSource, Source } from "../../src/types";
 describe("a conforming secret source", () =>
   testSecretSource(({ present, absent, failing }) => ({
     name: "conforming",
+    // `async`, though nothing here is awaited, so that `testSecretSource`'s direct,
+    // unwrapped `factory(...).load(...)` call turns this throw into a rejected promise, which
+    // `.rejects.toThrow()` requires — a plain function's throw would instead escape synchronously.
+    // eslint-disable-next-line @typescript-eslint/require-await
     load: async (names) => {
       const resolved = new Map<string, string>();
       for (const [key, name] of names) {
         if (name === failing) throw new Error("unreachable");
         if (name === absent) continue;
-        if (present[name] !== undefined) resolved.set(key, present[name]!);
+        if (present[name] !== undefined) resolved.set(key, present[name]);
       }
       return resolved;
     },
@@ -37,6 +41,8 @@ describe("the kit itself", () => {
   it("would reject a source that throws on an absent secret", async () => {
     const broken: SecretSource = {
       name: "broken",
+      // `async` turns this throw into a rejection for the direct, unwrapped call below.
+      // eslint-disable-next-line @typescript-eslint/require-await
       load: async () => {
         throw new Error("not found");
       },
@@ -57,13 +63,21 @@ describe("the kit itself", () => {
     });
     const mutating: Source = {
       name: "mutating",
+      // `async` turns this throw into a rejection for the direct, unwrapped call below.
+      // eslint-disable-next-line @typescript-eslint/require-await
       load: async (context) => {
-        // Attempt to mutate a nested value in the frozen schema
+        // Attempt to mutate a nested value in the frozen schema. `as any`, and the resulting
+        // unsafe member access, are both deliberate: this is the point of the test, not an
+        // untyped value leaking in by accident (see the `no-explicit-any` comment in
+        // eslint.config.js).
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         (context.schema as any).a.default = "corrupted";
         return {};
       },
     };
     // The mutation attempt will throw because the schema is frozen in strict mode (ES modules)
-    await expect(mutating.load({ schema, get: () => undefined, warn: () => {} })).rejects.toThrow();
+    await expect(
+      mutating.load({ schema, get: () => undefined, warn: () => undefined })
+    ).rejects.toThrow();
   });
 });

@@ -16,7 +16,7 @@ function scratch(): string {
   return dir;
 }
 
-const silent = { log: () => {}, error: () => {} };
+const silent = { log: () => undefined, error: () => undefined };
 
 afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
 
@@ -64,7 +64,10 @@ describe("revopush-config types", () => {
 
   it("exits non-zero and explains when --dir is missing", async () => {
     const errors: string[] = [];
-    const code = await runTypes(["--out", "x.ts"], { log: () => {}, error: (m) => errors.push(m) });
+    const code = await runTypes(["--out", "x.ts"], {
+      log: () => undefined,
+      error: (m) => errors.push(m),
+    });
     expect(code).to.equal(1);
     expect(errors.join(" ")).to.contain("--dir");
   });
@@ -125,7 +128,7 @@ describe("revopush-config types", () => {
     const root = scratch();
     const errors: string[] = [];
     const code = await runTypes(["--dir", root, "--out"], {
-      log: () => {},
+      log: () => undefined,
       error: (m) => errors.push(m),
     });
     expect(code).to.equal(1);
@@ -136,7 +139,7 @@ describe("revopush-config types", () => {
     const root = scratch();
     const errors: string[] = [];
     const code = await runTypes(["--dir", root, "--out", "--check"], {
-      log: () => {},
+      log: () => undefined,
       error: (m) => errors.push(m),
     });
     expect(code).to.equal(1);
@@ -282,7 +285,9 @@ describe("revopush-config types", () => {
 
     it("--version prints the package's actual version and exits zero", () => {
       withSymlink((symlinkPath) => {
-        const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "../../package.json"), "utf8"));
+        const pkg = JSON.parse(
+          fs.readFileSync(path.join(__dirname, "../../package.json"), "utf8")
+        ) as { version: string };
         const result = spawnSync(symlinkPath, ["--version"], { encoding: "utf8" });
         expect(result.status).to.equal(0);
         expect(result.stdout.trim()).to.equal(pkg.version);

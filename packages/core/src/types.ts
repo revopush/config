@@ -57,7 +57,7 @@ export interface Provenance {
   /** Name of the source that supplied the winning value, or `"default"`. */
   winner: string;
   /** Every layer that supplied a value for this key, lowest precedence first. */
-  layers: Array<{ source: string; value: unknown }>;
+  layers: { source: string; value: unknown }[];
 }
 
 /** Read access to resolved configuration. */

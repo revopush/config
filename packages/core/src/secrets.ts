@@ -50,6 +50,11 @@ export function secretNames(
             `Secret "${key}" has secretName "${template}", but "${placeholder}" resolved to nothing.`
           );
         }
+        // `value` is a config value read back via `read()` (declared `unknown`) and may
+        // legitimately be a number or boolean, not just a string; stringifying whatever comes
+        // back, "[object Object]" included for an object-typed value, is existing behaviour this
+        // pass must not change.
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         return String(value);
       })
     );

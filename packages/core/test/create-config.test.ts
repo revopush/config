@@ -24,13 +24,14 @@ function build(overrides: Partial<Parameters<typeof createConfig>[0]> = {}) {
 function stubSecrets(values: Record<string, string>, requested: string[] = []): SecretSource {
   return {
     name: "stub-vault",
-    load: async (names) => {
+    // No `await` needed: the interface requires a Promise, not asynchrony.
+    load: (names) => {
       const resolved = new Map<string, string>();
       for (const [key, name] of names) {
         requested.push(name);
-        if (values[name] !== undefined) resolved.set(key, values[name]!);
+        if (values[name] !== undefined) resolved.set(key, values[name]);
       }
-      return resolved;
+      return Promise.resolve(resolved);
     },
   };
 }
@@ -46,8 +47,13 @@ describe("createConfig", () => {
 
   it("throws a named error when read before init", () => {
     const config = build();
-    expect(() => config.get("redis.host")).toThrow(ConfigNotInitializedError);
-    expect(() => config.get("redis.host")).toThrow(/redis\.host/);
+    // Block bodies so the (unused, `any`-typed by the default `K`) return value isn't returned.
+    expect(() => {
+      config.get("redis.host");
+    }).toThrow(ConfigNotInitializedError);
+    expect(() => {
+      config.get("redis.host");
+    }).toThrow(/redis\.host/);
   });
 
   // The message used to name the key as "toJSON", which reads like a config key rather than the
@@ -76,12 +82,22 @@ describe("createConfig", () => {
     const config = build({ secretSource: stubSecrets({ "api-key": "k" }) });
     await config.init();
 
+    // `as any` throughout this block is deliberate: it is how a mistyped key gets past the
+    // compiler so the runtime rejection below is what is actually under test (see the
+    // `no-explicit-any` comment in eslint.config.js).
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- see above
     expect(config.has("typo" as any)).to.equal(false);
 
-    expect(() => config.get("typo" as any)).toThrow(ConfigError);
-    expect(() => config.get("typo" as any)).not.toThrow(/cannot find configuration param/);
+    expect(() => {
+      config.get("typo" as any);
+    }).toThrow(ConfigError);
+    expect(() => {
+      config.get("typo" as any);
+    }).not.toThrow(/cannot find configuration param/);
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- see above
     expect(() => config.explain("typo" as any)).toThrow(ConfigError);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument -- see above
     expect(() => config.explain("typo" as any)).not.toThrow(/cannot find configuration param/);
   });
 
@@ -182,7 +198,7 @@ describe("createConfig", () => {
 
   it("routes a source warning to onWarning instead of the console", async () => {
     const warnings: string[] = [];
-    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const config = createConfig({
       schemaDir: DIR,
       sources: [fileLayers({ environment: "no-such-env" })],
@@ -262,7 +278,9 @@ describe("createConfig", () => {
     await expect(config.init()).rejects.toThrow(MissingSecretsError);
 
     expect(config.get("secret.apiKey")).to.equal("first-key");
-    expect(() => config.get("redis.host")).not.toThrow(ConfigNotInitializedError);
+    expect(() => {
+      config.get("redis.host");
+    }).not.toThrow(ConfigNotInitializedError);
   });
 
   it("explains where a value came from", async () => {

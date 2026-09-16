@@ -71,7 +71,7 @@ export function testSource(factory: () => Source): void {
     // match, so a directory-based source that finds nothing here must fall through gracefully.
     dir: os.tmpdir(),
     get: () => undefined,
-    warn: () => {},
+    warn: () => undefined,
   };
 
   it("has a name", () => {

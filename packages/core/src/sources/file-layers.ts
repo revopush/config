@@ -45,7 +45,7 @@ function merge(target: SourceValues, source: SourceValues): SourceValues {
     if (FORBIDDEN_KEYS.has(key)) continue;
     const existing = target[key];
     if (isPlainObject(value) && isPlainObject(existing)) {
-      merge(existing as SourceValues, value as SourceValues);
+      merge(existing, value);
     } else {
       target[key] = value;
     }

@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { emitTypes } from "./emit";
+import { Schema } from "../types";
 
 /**
  * I/O interface for the types command, allowing testing without console.
@@ -50,7 +51,12 @@ export function readVersion(packageJsonPath: string): string {
  * `io` deliberately defaults to `console`, unlike the library's `onWarning` (silent unless a
  * consumer opts in): this is a terminal entry point, where saying nothing by default would be a
  * broken CLI, not a well-behaved library default.
+ *
+ * Every I/O call here is the sync `fs` API, so nothing is actually awaited; kept `async` anyway
+ * so bin.ts's top-level `main().catch(...)` pattern (and every caller/test) can treat this
+ * uniformly as a Promise.
  */
+// eslint-disable-next-line @typescript-eslint/require-await -- see the doc comment above
 export async function runTypes(argv: string[], io: CliIO = console): Promise<number> {
   const dir = flag(argv, "--dir");
   const out = flag(argv, "--out");
@@ -70,7 +76,9 @@ export async function runTypes(argv: string[], io: CliIO = console): Promise<num
 
   let expected: string;
   try {
-    expected = emitTypes(JSON.parse(fs.readFileSync(schemaFile, "utf8")), { interfaceName });
+    expected = emitTypes(JSON.parse(fs.readFileSync(schemaFile, "utf8")) as Schema, {
+      interfaceName,
+    });
   } catch (error) {
     io.error(
       `Could not read ${schemaFile}: ${error instanceof Error ? error.message : String(error)}`

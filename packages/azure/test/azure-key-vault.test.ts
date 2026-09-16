@@ -5,10 +5,12 @@ import { azureKeyVault, resolveVaultUri } from "../src/index";
 
 function stub(values: Record<string, string | undefined>, failing?: string) {
   return {
-    getSecret: async (name: string) => {
+    // No `await` needed: a throw here happens while `getSecret(...)` is still being evaluated,
+    // inside the caller's try/await, so it is caught exactly as a rejected promise would be.
+    getSecret: (name: string) => {
       if (name === failing) throw new Error("unreachable");
       if (!(name in values)) throw Object.assign(new Error("SecretNotFound"), { statusCode: 404 });
-      return { value: values[name] };
+      return Promise.resolve({ value: values[name] });
     },
   };
 }

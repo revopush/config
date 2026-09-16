@@ -8,7 +8,7 @@ function resolve(raw: string): boolean {
   const store = convict({ flag: { doc: "Flag", format: STRICT_BOOLEAN, default: false } });
   store.load({ flag: raw });
   store.validate({ allowed: "strict" });
-  return store.get("flag") as boolean;
+  return store.get("flag");
 }
 
 describe("strict-boolean", () => {

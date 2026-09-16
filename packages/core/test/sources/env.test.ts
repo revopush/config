@@ -11,7 +11,7 @@ const schema: Schema = {
 };
 
 function context(overrides: Partial<SourceContext> = {}): SourceContext {
-  return { schema, get: () => undefined, warn: () => {}, ...overrides };
+  return { schema, get: () => undefined, warn: () => undefined, ...overrides };
 }
 
 describe("env source", () => {

@@ -1,5 +1,6 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import eslintConfigPrettier from "eslint-config-prettier";
 
 export default tseslint.config(
   {
@@ -8,9 +9,12 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    // Only src/test are part of a tsconfig project, which type-aware rules (no-floating-promises)
-    // need; tsup.config.ts still gets the non-type-aware rules above via the default file match.
+    // Only src/test are part of a tsconfig project, which the type-checked presets below need to
+    // type-check a file; tsup.config.ts and this file itself fall outside any tsconfig project
+    // and stay on the non-type-aware `recommended` preset above (see the disableTypeChecked
+    // carve-out further down).
     files: ["packages/*/src/**/*.ts", "packages/*/test/**/*.ts"],
+    extends: [tseslint.configs.recommendedTypeChecked, tseslint.configs.stylisticTypeChecked],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -32,5 +36,13 @@ export default tseslint.config(
       // the runtime rejects it. Both are intentional escape hatches, not oversights.
       "@typescript-eslint/no-explicit-any": "off",
     },
-  }
+  },
+  {
+    // tsup.config.ts (and eslint.config.js itself) are not part of any tsconfig project, so the
+    // type-checked presets above cannot type-check them; the type-checked presets error on files
+    // they cannot type-check, so fall back to the non-type-aware rules here.
+    files: ["**/tsup.config.ts", "eslint.config.js"],
+    extends: [tseslint.configs.disableTypeChecked],
+  },
+  eslintConfigPrettier
 );

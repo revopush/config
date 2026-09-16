@@ -31,6 +31,10 @@ export class Store {
 
   constructor(schema: Schema) {
     registerFormats();
+    // convict's typings don't accept this library's Schema type (see the `no-explicit-any`
+    // comment in eslint.config.js); this cast is the one documented boundary where that mismatch
+    // is absorbed.
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     this.store = convict(schema as any);
     this.entries = new Map(leaves(schema).map(({ path, entry }) => [path, entry]));
     for (const [path, entry] of this.entries) {
@@ -132,6 +136,9 @@ export class Store {
   toJSON(): Record<string, unknown> {
     const dumped: Record<string, unknown> = {};
     for (const [path, entry] of this.entries) {
+      // `||`, not `??`: `entry.sensitive` is `boolean | undefined`, and an explicit `false` must
+      // still fall through to the `secret.`-prefix check below, per the doc comment above.
+      // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
       const redact = entry.sensitive || path.startsWith(SECRET_PREFIX);
       setPath(dumped, path, redact ? "[REDACTED]" : this.get(path));
     }

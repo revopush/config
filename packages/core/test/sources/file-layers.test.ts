@@ -11,7 +11,7 @@ const schema: Schema = { redis: { host: { doc: "H", default: "localhost" } } };
 
 function context(
   dir: string | undefined,
-  warn: (message: string) => void = () => {}
+  warn: (message: string) => void = () => undefined
 ): SourceContext {
   return { schema, dir, get: () => undefined, warn };
 }
@@ -73,7 +73,7 @@ describe("fileLayers source", () => {
     const values = await fileLayers({ environment: "arraytest", region: "object" }).load(
       context(DIR)
     );
-    const origins = values.origins as unknown;
+    const origins = values.origins;
     expect(origins).to.deep.equal({ custom: "object" });
     // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- chai's `.false` getter has a side effect, not a no-op.
     expect(Array.isArray(origins)).to.be.false;
@@ -83,7 +83,7 @@ describe("fileLayers source", () => {
     const values = await fileLayers({ environment: "objecttest", region: "array" }).load(
       context(DIR)
     );
-    const config = values.config as unknown;
+    const config = values.config;
     expect(config).to.deep.equal(["replaced", "with", "array"]);
   });
 
@@ -93,7 +93,7 @@ describe("fileLayers source", () => {
     const values = await fileLayers({ environment: "arrayreplace", region: "short" }).load(
       context(DIR)
     );
-    const items = values.items as unknown;
+    const items = values.items;
     expect(items).to.deep.equal(["x"]);
   });
 
