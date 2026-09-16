@@ -135,6 +135,6 @@ describe("azureKeyVault", () => {
 });
 
 describe("azure key vault conformance", () =>
-  testSecretSource(({ present, absent, failing }) =>
+  testSecretSource(({ present, failing }) =>
     azureKeyVault({ client: stub({ ...present }, failing) })
   ));

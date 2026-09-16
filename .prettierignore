@@ -1,0 +1,9 @@
+dist
+node_modules
+package-lock.json
+
+# Deliberately malformed JSON used to test file-layers' parse-error handling; formatting would
+# either error on the one that isn't valid JSON at all or silently "fix" the one that is invalid
+# only because of an unquoted key, defeating what it tests.
+packages/core/test/fixtures/layers/broken.json
+packages/core/test/fixtures/layers/production.brokenregion.json

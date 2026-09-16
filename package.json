@@ -2,21 +2,33 @@
   "name": "revopush-config-monorepo",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "examples/*"],
-  "engines": { "node": ">=20" },
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "build": "npm run build -w @revopush/config && npm run build -w @revopush/config-azure-keyvault",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.base.json",
     "changeset": "changeset",
     "release": "npm run build && changeset publish",
-    "examples": "node examples/run-all.mjs"
+    "examples": "node examples/run-all.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint packages"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.0",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.15.2",
+    "eslint": "^10.10.0",
+    "prettier": "^3.9.6",
     "tsup": "^8.3.0",
     "typescript": "^5.8.3",
+    "typescript-eslint": "^8.70.0",
     "vitest": "^5.0.0"
   }
 }

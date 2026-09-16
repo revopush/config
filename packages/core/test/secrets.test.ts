@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { ConfigError } from "../src/errors";
 import { secretNames } from "../src/secrets";
 
 const schema = {

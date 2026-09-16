@@ -80,7 +80,9 @@ export function azureKeyVault(options: AzureKeyVaultOptions = {}): SecretSource 
           } catch (error) {
             if (isNotFound(error)) return;
             const detail = error instanceof Error ? error.message : String(error);
-            throw new Error(`Failed to read Key Vault secret "${name}" for config key "${key}": ${detail}`);
+            throw new Error(`Failed to read Key Vault secret "${name}" for config key "${key}": ${detail}`, {
+              cause: error,
+            });
           }
         })
       );

@@ -62,6 +62,7 @@ describe("fileLayers source", () => {
     const values = await fileLayers({ environment: "arraytest", region: "object" }).load(context(DIR));
     const origins = values.origins as unknown;
     expect(origins).to.deep.equal({ custom: "object" });
+    // eslint-disable-next-line @typescript-eslint/no-unused-expressions -- chai's `.false` getter has a side effect, not a no-op.
     expect(Array.isArray(origins)).to.be.false;
   });
 
