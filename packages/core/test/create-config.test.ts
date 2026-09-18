@@ -182,6 +182,28 @@ describe("createConfig", () => {
     });
   });
 
+  it("reports a required nullable key as missing rather than as a format error", async () => {
+    const config = createConfig({
+      schema: { k: { doc: "K", format: "String", default: null, nullable: true, required: true } },
+      sources: [env({ from: {} })],
+    });
+
+    await expect(config.init()).rejects.toThrow(/required, but no source supplied it/);
+  });
+
+  it("accepts a required nullable key a source set", async () => {
+    const config = createConfig({
+      schema: {
+        k: { doc: "K", format: "String", default: null, nullable: true, required: true, env: "K" },
+      },
+      sources: [env({ from: { K: "v" } })],
+    });
+
+    await config.init();
+
+    expect(config.get("k")).to.equal("v");
+  });
+
   it("fails a required secret no layer file declared, without consulting the secret source", async () => {
     const requested: string[] = [];
     const config = createConfig({
