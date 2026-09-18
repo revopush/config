@@ -99,6 +99,9 @@ Two things to know:
 - The check runs after format validation, so the `default` must still satisfy its own `format`:
   give an enum key one of its members, and pair `default: null` with `nullable: true`. Otherwise
   validation fails first and reports a format error instead of the missing key.
+- With `nullable: true`, an explicit `null` from a source counts as supplied. The pair means "a
+  source must make a choice, and `null` is one of them" — which separates a deliberate "none" from
+  a forgotten key. `env()` cannot express it, since an empty variable counts as unset.
 - On a `secret.*` key, `required` catches a layer file that forgot to list it: an undeclared secret
   is never requested from the store, so it fails here even if the store holds a value. A secret a
   layer file did declare reports through `MissingSecretsError`, which also names the declarer.
