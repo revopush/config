@@ -62,7 +62,6 @@ describe("Store", () => {
     expect(store.missingRequired()).to.deep.equal([]);
   });
 
-  // has() reads 0 and false as supplied, so presence has to come from the layers instead.
   it("reports a required numeric key still on its default", () => {
     const store = new Store({ port: { doc: "Port", format: "port", default: 0, required: true } });
 

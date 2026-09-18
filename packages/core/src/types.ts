@@ -9,10 +9,7 @@ export interface SchemaEntry {
   env?: string;
   sensitive?: boolean;
   nullable?: boolean;
-  /**
-   * Fails `init()` when no source supplied the key. The schema default does not count as supplied,
-   * which is what lets a required key keep an ordinary default and so an ordinary generated type.
-   */
+  /** Fails `init()` unless some source supplies the key; the schema default does not count. */
   required?: boolean;
   /**
    * The name this secret has in its store. Defaults to the key below `secret.` in kebab-case with

@@ -150,12 +150,8 @@ export class Store {
     return this.layers.get(path)?.find((layer) => layer.source !== DEFAULT_LAYER);
   }
 
-  /**
-   * Keys declared `required` that no source supplied.
-   *
-   * Presence is "a source set it", not `has()`: `has()` reads `0` and `false` as supplied, so a
-   * required port defaulting to `0` could never be reported missing.
-   */
+  // Not has(): it reads 0 and false as supplied, so a required port defaulting to 0 would never
+  // be reported missing.
   missingRequired(): string[] {
     const missing: string[] = [];
     for (const [path, entry] of this.entries) {
