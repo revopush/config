@@ -1,5 +1,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { DEFAULT_LAYER } from "./constants";
 import {
   ConfigError,
   ConfigNotInitializedError,
@@ -53,6 +54,12 @@ export function createConfig<K = Record<string, any>>(options: CreateConfigOptio
     // a collision would put two layers under one name in explain() and make `winner` ambiguous.
     const seenSourceNames = new Set<string>();
     for (const { name } of [...sources, ...(options.secretSource ? [options.secretSource] : [])]) {
+      // A source using this name has every value it supplies read back as a schema default.
+      if (name === DEFAULT_LAYER) {
+        throw new ConfigError(
+          `A source may not be named "${DEFAULT_LAYER}": that name is reserved for schema defaults.`
+        );
+      }
       if (seenSourceNames.has(name)) {
         throw new ConfigError(
           `Two sources are both named "${name}". Source.name must be unique within one config.`

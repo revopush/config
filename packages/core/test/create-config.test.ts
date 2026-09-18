@@ -138,6 +138,16 @@ describe("createConfig", () => {
     expect(config.get("secret.apiKey")).to.equal("from-env");
   });
 
+  it("rejects a source named after the schema-default layer", async () => {
+    const config = createConfig({
+      schema: { secret: { apiKey: { doc: "Api key", default: "" } } },
+      sources: [{ name: "default", load: () => ({ secret: { apiKey: "declared" } }) }],
+      secretSource: stubSecrets({ "api-key": "k" }),
+    });
+
+    await expect(config.init()).rejects.toThrow(ConfigError);
+  });
+
   it("requests only the secrets a layer file declared", async () => {
     const requested: string[] = [];
     const config = build({ secretSource: stubSecrets({ "api-key": "k" }, requested) });
