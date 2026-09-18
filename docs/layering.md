@@ -95,8 +95,15 @@ booleans and enums, not only strings, and the key keeps an ordinary default and 
 generated type. The usual alternative, `default: null`, also makes a key required but types it
 `T | null` for every consumer.
 
+The check runs after format validation, so a required key's `default` still has to satisfy its own
+`format`: give an enum key one of its members as the default, not `""`, or validation fails first
+with a format error instead of the clearer "no source supplied it".
+
 A required `secret.*` key that a layer file declared is reported through `MissingSecretsError`
-instead, which also names the source that declared it.
+instead, which also names the source that declared it. One that _no_ layer file declared is never
+requested from the secret source at all — a layer file is what declares which secrets an
+environment needs — so it fails as an ordinary required key even when the store holds a value for
+it. That is the point: on a secret, `required: true` catches the layer file that forgot to list it.
 
 ## Requiring a layer file to exist
 

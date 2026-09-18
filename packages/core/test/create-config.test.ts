@@ -169,12 +169,44 @@ describe("createConfig", () => {
     });
   });
 
-  // MissingSecretsError names who declared the secret, which a plain required check cannot, so the
-  // secret pass has to run first for a key that is both.
-  it("reports a required secret through MissingSecretsError, not the required check", async () => {
-    const config = build({ secretSource: stubSecrets({}) });
+  // A layer file's declaration is itself a source supplying the key, so a required secret it
+  // declared is never a missingRequired() hit: it surfaces as MissingSecretsError, which is the
+  // better error because it also names who declared it.
+  it("reports a required secret a layer file declared through MissingSecretsError", async () => {
+    const config = createConfig({
+      schema: { secret: { apiKey: { doc: "Api key", default: "", required: true } } },
+      sources: [{ name: "files", load: () => ({ secret: { apiKey: "" } }) }],
+      secretSource: stubSecrets({}),
+    });
 
     await expect(config.init()).rejects.toThrow(MissingSecretsError);
+    await config.init().catch((error: MissingSecretsError) => {
+      expect(error.declaredBy.get("secret.apiKey")).to.equal("files");
+    });
+  });
+
+  // The mirror image: nothing declares the secret, so the secret source is never consulted for it
+  // and `required` is what catches the omission. Documented in docs/layering.md, because the
+  // message names no source even when the store holds the value.
+  it("fails a required secret no layer file declared, without consulting the secret source", async () => {
+    const requested: string[] = [];
+    const config = createConfig({
+      schema: { secret: { apiKey: { doc: "Api key", default: "", required: true } } },
+      sources: [env({ from: {} })],
+      secretSource: stubSecrets({ "api-key": "k" }, requested),
+    });
+
+    await expect(config.init()).rejects.toThrow(ConfigValidationError);
+    expect(requested).to.deep.equal([]);
+  });
+
+  it("rejects a source that borrows the provenance name used for schema defaults", async () => {
+    const config = createConfig({
+      schema: { token: { doc: "Token", default: "", required: true } },
+      sources: [{ name: "default", load: () => ({ token: "abc" }) }],
+    });
+
+    await expect(config.init()).rejects.toThrow(ConfigError);
   });
 
   it("never consults the source when no layer file declares a secret", async () => {
