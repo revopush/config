@@ -1,6 +1,6 @@
 {
   "name": "@revopush/config-azure-keyvault",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Azure Key Vault secret provider for @revopush/config.",
   "license": "MIT",
   "repository": {
@@ -41,7 +41,7 @@
     "build": "tsup"
   },
   "peerDependencies": {
-    "@revopush/config": "^0.1.0"
+    "@revopush/config": "^0.2.0"
   },
   "dependencies": {
     "@azure/identity": "^4.9.1",

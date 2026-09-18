@@ -1,6 +1,6 @@
 {
   "name": "@revopush/config",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Layered configuration for Node services: schema-validated, per-environment and per-region, with pluggable value sources and secret providers.",
   "license": "MIT",
   "repository": {
