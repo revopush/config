@@ -10,6 +10,11 @@ export interface SchemaEntry {
   sensitive?: boolean;
   nullable?: boolean;
   /**
+   * Fails `init()` when no source supplied the key. The schema default does not count as supplied,
+   * which is what lets a required key keep an ordinary default and so an ordinary generated type.
+   */
+  required?: boolean;
+  /**
    * The name this secret has in its store. Defaults to the key below `secret.` in kebab-case with
    * dots flattened to dashes: `secret.redisKey` -> `redis-key`, `secret.redis.password` ->
    * `redis-password`.

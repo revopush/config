@@ -44,6 +44,32 @@ describe("Store", () => {
 
   // has() answers "is this set" and an undeclared key is never set, so it stays false rather than
   // throwing — unlike get() and explain(), which must fail loudly on a typo'd key.
+  it("reports a required key no source supplied", () => {
+    const store = new Store({ token: { doc: "Token", default: "", required: true } });
+
+    expect(store.missingRequired()).to.deep.equal(["token"]);
+  });
+
+  it("does not report a required key a source supplied", () => {
+    const store = new Store({ token: { doc: "Token", default: "", required: true } });
+    store.merge("env", { token: "abc" });
+
+    expect(store.missingRequired()).to.deep.equal([]);
+  });
+
+  // has() reads 0 and false as supplied, so presence has to come from the layers instead.
+  it("reports a required numeric key still on its default", () => {
+    const store = new Store({ port: { doc: "Port", format: "port", default: 0, required: true } });
+
+    expect(store.missingRequired()).to.deep.equal(["port"]);
+  });
+
+  it("ignores keys that are not required", () => {
+    const store = new Store({ port: { doc: "Port", format: "port", default: 0 } });
+
+    expect(store.missingRequired()).to.deep.equal([]);
+  });
+
   it("returns false from has() for a key that is not in the schema, without throwing", () => {
     const store = new Store(schema);
     expect(store.has("typo")).to.equal(false);

@@ -63,7 +63,7 @@ config.get("secret.sessionSecret"); // from SESSION_SECRET, since no secretSourc
 
 **Schema.** A JSON file, `schema.json`, declares every configuration key up front: its default
 value, an optional `doc`, an optional `format` for validation, the environment variable that can
-set it, and whether it is `sensitive` or `nullable`. Nothing reaches `config.get()` that the schema
+set it, and whether it is `sensitive`, `nullable` or `required`. Nothing reaches `config.get()` that the schema
 did not declare — an unknown key anywhere in a layer file fails startup instead of being silently
 ignored.
 

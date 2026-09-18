@@ -3,6 +3,7 @@ import * as path from "node:path";
 import {
   ConfigError,
   ConfigNotInitializedError,
+  ConfigValidationError,
   MissingSecretsError,
   SourceError,
   createConfig,
@@ -151,6 +152,29 @@ describe("createConfig", () => {
       expect(error.keys).to.deep.equal(["secret.apiKey"]);
       expect(error.declaredBy.get("secret.apiKey")).to.equal("files");
     });
+  });
+
+  it("fails init naming every required key no source supplied", async () => {
+    const config = createConfig({
+      schema: {
+        token: { doc: "Token", default: "", required: true },
+        port: { doc: "Port", format: "port", default: 0, required: true },
+      },
+      sources: [env({ from: {} })],
+    });
+
+    await expect(config.init()).rejects.toThrow(ConfigValidationError);
+    await config.init().catch((error: ConfigValidationError) => {
+      expect(error.keys).to.deep.equal(["token", "port"]);
+    });
+  });
+
+  // MissingSecretsError names who declared the secret, which a plain required check cannot, so the
+  // secret pass has to run first for a key that is both.
+  it("reports a required secret through MissingSecretsError, not the required check", async () => {
+    const config = build({ secretSource: stubSecrets({}) });
+
+    await expect(config.init()).rejects.toThrow(MissingSecretsError);
   });
 
   it("never consults the source when no layer file declares a secret", async () => {

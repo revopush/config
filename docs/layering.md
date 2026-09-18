@@ -75,6 +75,29 @@ await config.init();
 config.get("enableAccountRegistration"); // false
 ```
 
+## Required keys
+
+convict needs a `default` on every entry, so an unset key resolves to it silently. `required: true`
+says a default is not good enough: if no source supplied the key, `init()` throws
+`ConfigValidationError` naming every key that is missing.
+
+```json
+{
+  "cloudflare": {
+    "bucket": { "doc": "R2 bucket", "default": "", "env": "CLOUDFLARE_BUCKET", "required": true },
+    "port": { "doc": "R2 port", "format": "port", "default": 0, "env": "R2_PORT", "required": true }
+  }
+}
+```
+
+Presence means "a source set it", not "the value looks non-empty" — so this works for numbers,
+booleans and enums, not only strings, and the key keeps an ordinary default and so an ordinary
+generated type. The usual alternative, `default: null`, also makes a key required but types it
+`T | null` for every consumer.
+
+A required `secret.*` key that a layer file declared is reported through `MissingSecretsError`
+instead, which also names the source that declared it.
+
 ## Requiring a layer file to exist
 
 By default, `fileLayers()` treats a missing layer file as normal: no file for the given

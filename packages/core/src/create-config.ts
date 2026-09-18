@@ -1,6 +1,12 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { ConfigError, ConfigNotInitializedError, MissingSecretsError, SourceError } from "./errors";
+import {
+  ConfigError,
+  ConfigNotInitializedError,
+  ConfigValidationError,
+  MissingSecretsError,
+  SourceError,
+} from "./errors";
 import { secretNames } from "./secrets";
 import { env } from "./sources/env";
 import { fileLayers } from "./sources/file-layers";
@@ -78,6 +84,14 @@ export function createConfig<K = Record<string, any>>(options: CreateConfigOptio
 
     const missing = new Map([...declared].filter(([key]) => !next.has(key)));
     if (missing.size > 0) throw new MissingSecretsError(missing);
+
+    const missingRequired = next.missingRequired();
+    if (missingRequired.length > 0) {
+      throw new ConfigValidationError(
+        missingRequired,
+        missingRequired.map((key) => `${key}: required, but no source supplied it`).join("\n")
+      );
+    }
 
     store = next;
   }

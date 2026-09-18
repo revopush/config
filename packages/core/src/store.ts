@@ -146,6 +146,22 @@ export class Store {
   }
 
   /**
+   * Keys declared `required` that no source supplied.
+   *
+   * Presence is "some layer other than the default set it", not `has()`: `has()` reads `0` and
+   * `false` as supplied, so a required port defaulting to `0` could never be reported missing.
+   */
+  missingRequired(): string[] {
+    const missing: string[] = [];
+    for (const [path, entry] of this.entries) {
+      if (!entry.required) continue;
+      if (!this.layers.get(path)!.some((layer) => layer.source !== DEFAULT_LAYER))
+        missing.push(path);
+    }
+    return missing;
+  }
+
+  /**
    * Secret keys a source explicitly set, mapped to that source's name.
    *
    * Schema defaults do not count: a schema declares which secrets exist, a layer file declares
