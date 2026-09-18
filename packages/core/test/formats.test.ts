@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import convict from "convict";
-import { registerFormats, STRICT_BOOLEAN } from "../src/formats";
+import { NON_EMPTY_STRING, registerFormats, STRICT_BOOLEAN } from "../src/formats";
 
 registerFormats();
 
@@ -9,6 +9,13 @@ function resolve(raw: string): boolean {
   store.load({ flag: raw });
   store.validate({ allowed: "strict" });
   return store.get("flag");
+}
+
+function resolveRequired(raw: unknown): string {
+  const store = convict({ name: { doc: "Name", format: NON_EMPTY_STRING, default: "" } });
+  store.load({ name: raw });
+  store.validate({ allowed: "strict" });
+  return store.get("name");
 }
 
 describe("strict-boolean", () => {
@@ -39,5 +46,25 @@ describe("strict-boolean", () => {
     }).to.not.throw();
     expect(addFormat).not.toHaveBeenCalled();
     addFormat.mockRestore();
+  });
+});
+
+describe("non-empty-string", () => {
+  it("accepts a value and returns it unchanged", () => {
+    expect(resolveRequired(" spaced ")).to.equal(" spaced ");
+  });
+
+  // The point of the format: with an empty default, an unset key fails validation naming itself
+  // rather than resolving to "" and being discovered much later.
+  it("rejects the empty default a missing key falls back to", () => {
+    expect(() => resolveRequired("")).toThrow(/must be a non-empty string/);
+  });
+
+  it("rejects whitespace, which is a mistake rather than a value", () => {
+    expect(() => resolveRequired("   ")).toThrow(/must be a non-empty string/);
+  });
+
+  it("rejects a non-string a layer file may have supplied", () => {
+    expect(() => resolveRequired(42)).toThrow(/must be a non-empty string/);
   });
 });

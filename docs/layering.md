@@ -75,6 +75,32 @@ await config.init();
 config.get("enableAccountRegistration"); // false
 ```
 
+## Required strings
+
+convict has no way to say "this key must be provided": every entry needs a `default`, and an unset
+key quietly resolves to it. The usual workaround, `default: null`, makes the key required but also
+types it as `T | null` for every consumer, even though validation guarantees it is never null once
+`init()` resolves.
+
+`NON_EMPTY_STRING` (`format: "non-empty-string"`) is the alternative: pair it with an empty default
+and an unset key fails validation naming itself, while the generated type stays `string`.
+
+```json
+{
+  "secret": {
+    "signingKey": {
+      "doc": "Signs session cookies",
+      "format": "non-empty-string",
+      "default": "",
+      "env": "SIGNING_KEY"
+    }
+  }
+}
+```
+
+Whitespace counts as empty, so `SIGNING_KEY=" "` fails the same way. Use it for the keys a deploy
+cannot run without; leave an ordinary `String` format on the ones that have a usable default.
+
 ## Requiring a layer file to exist
 
 By default, `fileLayers()` treats a missing layer file as normal: no file for the given

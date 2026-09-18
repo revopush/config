@@ -9,3 +9,6 @@ export const DEFAULT_LAYER = "default";
 
 /** Name of the boolean format this library registers. Use it as `format` in a schema. */
 export const STRICT_BOOLEAN = "strict-boolean";
+
+/** Name of the required-string format this library registers. Use it as `format` in a schema. */
+export const NON_EMPTY_STRING = "non-empty-string";
