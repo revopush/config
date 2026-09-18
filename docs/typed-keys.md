@@ -106,6 +106,7 @@ type:
 | `format: "port" \| "int" \| "nat" \| "duration" \| "number" \| "Number"`, or a number `default` | `number`                                                |
 | anything else                                                                                   | `string`                                                |
 | `nullable: true`, or `default: null`                                                            | appends `\| null` to whatever the above produced        |
+| `required: true`                                                                                | no effect — the default's type is still what is emitted |
 | `tsType: "..."` present                                                                         | overrides everything above — see below                  |
 
 The nullable rule composes with every other row: a nullable numeric key becomes `number | null` (as

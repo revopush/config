@@ -49,6 +49,31 @@ describe("Store", () => {
     expect(store.has("typo")).to.equal(false);
   });
 
+  it("reports a required key no source supplied", () => {
+    const store = new Store({ token: { doc: "Token", default: "", required: true } });
+
+    expect(store.missingRequired()).to.deep.equal(["token"]);
+  });
+
+  it("does not report a required key a source supplied", () => {
+    const store = new Store({ token: { doc: "Token", default: "", required: true } });
+    store.merge("env", { token: "abc" });
+
+    expect(store.missingRequired()).to.deep.equal([]);
+  });
+
+  it("reports a required numeric key still on its default", () => {
+    const store = new Store({ port: { doc: "Port", format: "port", default: 0, required: true } });
+
+    expect(store.missingRequired()).to.deep.equal(["port"]);
+  });
+
+  it("ignores keys that are not required", () => {
+    const store = new Store({ port: { doc: "Port", format: "port", default: 0 } });
+
+    expect(store.missingRequired()).to.deep.equal([]);
+  });
+
   it("throws ConfigError, not a raw convict error, from get() for a key that is not in the schema", () => {
     const store = new Store(schema);
     expect(() => store.get("typo")).toThrow(ConfigError);

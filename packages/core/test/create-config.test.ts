@@ -3,6 +3,7 @@ import * as path from "node:path";
 import {
   ConfigError,
   ConfigNotInitializedError,
+  ConfigValidationError,
   MissingSecretsError,
   SourceError,
   createConfig,
@@ -151,6 +152,79 @@ describe("createConfig", () => {
       expect(error.keys).to.deep.equal(["secret.apiKey"]);
       expect(error.declaredBy.get("secret.apiKey")).to.equal("files");
     });
+  });
+
+  it("fails init naming every required key no source supplied", async () => {
+    const config = createConfig({
+      schema: {
+        token: { doc: "Token", default: "", required: true },
+        port: { doc: "Port", format: "port", default: 0, required: true },
+      },
+      sources: [env({ from: {} })],
+    });
+
+    await expect(config.init()).rejects.toThrow(ConfigValidationError);
+    await config.init().catch((error: ConfigValidationError) => {
+      expect(error.keys).to.deep.equal(["token", "port"]);
+    });
+  });
+
+  it("reports a required secret a layer file declared through MissingSecretsError", async () => {
+    const config = createConfig({
+      schema: { secret: { apiKey: { doc: "Api key", default: "", required: true } } },
+      sources: [{ name: "files", load: () => ({ secret: { apiKey: "" } }) }],
+      secretSource: stubSecrets({}),
+    });
+
+    await expect(config.init()).rejects.toThrow(MissingSecretsError);
+    await config.init().catch((error: MissingSecretsError) => {
+      expect(error.declaredBy.get("secret.apiKey")).to.equal("files");
+    });
+  });
+
+  it("reports a required nullable key as missing rather than as a format error", async () => {
+    const config = createConfig({
+      schema: { k: { doc: "K", format: "String", default: null, nullable: true, required: true } },
+      sources: [env({ from: {} })],
+    });
+
+    await expect(config.init()).rejects.toThrow(/required, but no source supplied it/);
+  });
+
+  it("accepts an explicit null for a required nullable key", async () => {
+    const config = createConfig({
+      schema: { k: { doc: "K", format: "String", default: null, nullable: true, required: true } },
+      sources: [{ name: "files", load: () => ({ k: null }) }],
+    });
+
+    await config.init();
+
+    expect(config.get("k")).to.equal(null);
+  });
+
+  it("accepts a required nullable key a source set", async () => {
+    const config = createConfig({
+      schema: {
+        k: { doc: "K", format: "String", default: null, nullable: true, required: true, env: "K" },
+      },
+      sources: [env({ from: { K: "v" } })],
+    });
+
+    await config.init();
+
+    expect(config.get("k")).to.equal("v");
+  });
+
+  it("fails a required secret no layer file declared, without consulting the secret source", async () => {
+    const requested: string[] = [];
+    const config = createConfig({
+      schema: { secret: { apiKey: { doc: "Api key", default: "", required: true } } },
+      sources: [env({ from: {} })],
+      secretSource: stubSecrets({ "api-key": "k" }, requested),
+    });
+
+    await expect(config.init()).rejects.toThrow(ConfigValidationError);
+    expect(requested).to.deep.equal([]);
   });
 
   it("never consults the source when no layer file declares a secret", async () => {

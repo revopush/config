@@ -9,6 +9,8 @@ export interface SchemaEntry {
   env?: string;
   sensitive?: boolean;
   nullable?: boolean;
+  /** Fails `init()` unless some source supplies the key; the schema default does not count. */
+  required?: boolean;
   /**
    * The name this secret has in its store. Defaults to the key below `secret.` in kebab-case with
    * dots flattened to dashes: `secret.redisKey` -> `redis-key`, `secret.redis.password` ->

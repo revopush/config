@@ -145,6 +145,21 @@ export class Store {
     return dumped;
   }
 
+  /** The first layer that set this key, ignoring the schema default. */
+  private suppliedBy(path: string): Layer | undefined {
+    return this.layers.get(path)?.find((layer) => layer.source !== DEFAULT_LAYER);
+  }
+
+  // Not has(): it reads 0 and false as supplied, so a required port defaulting to 0 would never
+  // be reported missing.
+  missingRequired(): string[] {
+    const missing: string[] = [];
+    for (const [path, entry] of this.entries) {
+      if (entry.required && !this.suppliedBy(path)) missing.push(path);
+    }
+    return missing;
+  }
+
   /**
    * Secret keys a source explicitly set, mapped to that source's name.
    *
@@ -153,9 +168,9 @@ export class Store {
    */
   declaredSecrets(): Map<string, string> {
     const declared = new Map<string, string>();
-    for (const [path, layers] of this.layers) {
+    for (const path of this.layers.keys()) {
       if (!path.startsWith(SECRET_PREFIX)) continue;
-      const first = layers.find((layer) => layer.source !== DEFAULT_LAYER);
+      const first = this.suppliedBy(path);
       if (first) declared.set(path, first.source);
     }
     return declared;

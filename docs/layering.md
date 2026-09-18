@@ -75,6 +75,37 @@ await config.init();
 config.get("enableAccountRegistration"); // false
 ```
 
+## Required keys
+
+convict needs a `default` on every entry, so an unset key resolves to it silently. `required: true`
+says a default is not good enough: if no source supplied the key, `init()` throws
+`ConfigValidationError` naming every key that is missing.
+
+```json
+{
+  "cloudflare": {
+    "bucket": { "doc": "R2 bucket", "default": "", "env": "CLOUDFLARE_BUCKET", "required": true },
+    "port": { "doc": "R2 port", "format": "port", "default": 0, "env": "R2_PORT", "required": true }
+  }
+}
+```
+
+Presence means "a source set it", so this works for numbers, booleans and enums, not only strings,
+and the key keeps an ordinary default — and so an ordinary generated type. The alternative,
+`default: null`, also makes a key required but types it `T | null` for every consumer.
+
+Two things to know:
+
+- The check runs after format validation, so the `default` must still satisfy its own `format`:
+  give an enum key one of its members, and pair `default: null` with `nullable: true`. Otherwise
+  validation fails first and reports a format error instead of the missing key.
+- With `nullable: true`, an explicit `null` from a source counts as supplied. The pair means "a
+  source must make a choice, and `null` is one of them" — which separates a deliberate "none" from
+  a forgotten key. `env()` cannot express it, since an empty variable counts as unset.
+- On a `secret.*` key, `required` catches a layer file that forgot to list it: an undeclared secret
+  is never requested from the store, so it fails here even if the store holds a value. A secret a
+  layer file did declare reports through `MissingSecretsError`, which also names the declarer.
+
 ## Requiring a layer file to exist
 
 By default, `fileLayers()` treats a missing layer file as normal: no file for the given
