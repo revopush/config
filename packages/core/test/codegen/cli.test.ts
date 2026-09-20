@@ -28,6 +28,16 @@ describe("revopush-config types", () => {
     expect(fs.readFileSync(out, "utf8")).to.contain(`"a": number;`);
   });
 
+  it("emits only the key interface with --no-accessors", async () => {
+    const root = scratch();
+    const out = path.join(root, "keys.ts");
+
+    expect(await runTypes(["--dir", root, "--out", out, "--no-accessors"], silent)).to.equal(0);
+    const written = fs.readFileSync(out, "utf8");
+    expect(written).to.contain("export interface ConfigKeys {");
+    expect(written).to.not.contain("bind");
+  });
+
   it("exits zero in check mode when the file is current", async () => {
     const root = scratch();
     const out = path.join(root, "keys.ts");

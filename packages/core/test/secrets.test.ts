@@ -86,3 +86,29 @@ describe("secretNames", () => {
     );
   });
 });
+
+describe("secrets inside a schema branch", () => {
+  const schema = {
+    secret: { redisKey: { doc: "Redis", default: "", sensitive: true } },
+    platform: {
+      saas: {
+        secret: {
+          cloudflareApiToken: { doc: "Token", default: "", sensitive: true },
+        },
+      },
+    },
+  };
+
+  // The node marks a secret, not a leading prefix: a branch's secrets sit below platform.<name>.
+  it("names a branch secret the same as a root-level one would be named", () => {
+    const names = secretNames(schema, ["platform.saas.secret.cloudflareApiToken"], () => undefined);
+
+    expect(names.get("platform.saas.secret.cloudflareApiToken")).to.equal("cloudflare-api-token");
+  });
+
+  it("still names a root-level secret from the part below the node", () => {
+    const names = secretNames(schema, ["secret.redisKey"], () => undefined);
+
+    expect(names.get("secret.redisKey")).to.equal("redis-key");
+  });
+});

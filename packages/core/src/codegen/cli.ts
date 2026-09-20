@@ -17,12 +17,15 @@ export interface CliIO {
   error(message: string): void;
 }
 
-export const USAGE = `Usage: revopush-config types --dir <schema-dir> --out <file> [--check] [--interface <name>]
+export const USAGE = `Usage: revopush-config types --dir <schema-dir> --out <file> [--check] [--interface <name>] [--no-accessors] [--import <module>]
 
-  --dir        Directory containing schema.json
-  --out        File to write
-  --check      Exit non-zero if --out does not match the schema; writes nothing
-  --interface  Name of the emitted interface (default: ConfigKeys)
+  --dir            Directory containing schema.json
+  --out            File to write
+  --check          Exit non-zero if --out does not match the schema; writes nothing
+  --interface      Name of the emitted key interface (default: ConfigKeys)
+  --no-accessors   Emit only the key interface, without the per-node types and bind()
+  --import         Module the generated file imports ReadonlyConfig from
+                   (default: @revopush/config)
 
 Usage: revopush-config --help | --version`;
 
@@ -62,6 +65,8 @@ export async function runTypes(argv: string[], io: CliIO = console): Promise<num
   const out = flag(argv, "--out");
   const check = argv.includes("--check");
   const interfaceName = flag(argv, "--interface");
+  const accessors = !argv.includes("--no-accessors");
+  const importFrom = flag(argv, "--import");
 
   if (!dir || !out) {
     io.error("Both --dir and --out are required.\n\n" + USAGE);
@@ -78,6 +83,8 @@ export async function runTypes(argv: string[], io: CliIO = console): Promise<num
   try {
     expected = emitTypes(JSON.parse(fs.readFileSync(schemaFile, "utf8")) as Schema, {
       interfaceName,
+      accessors,
+      importFrom,
     });
   } catch (error) {
     io.error(

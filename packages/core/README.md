@@ -71,7 +71,7 @@ you're browsing the source rather than the npm page:
 - [`docs/writing-a-secret-source.md`](https://github.com/revopush/config/blob/main/docs/writing-a-secret-source.md) — the `SecretSource`
   interface and a worked example.
 - [`docs/typed-keys.md`](https://github.com/revopush/config/blob/main/docs/typed-keys.md) — generating and using the `ConfigKeys`
-  interface, the mapping table, and `--check` in CI.
+  interface, the accessors, schema branches, the mapping table, and `--check` in CI.
 - [`docs/migrating.md`](https://github.com/revopush/config/blob/main/docs/migrating.md) — from convict or node-config.
 - [`@revopush/config-azure-keyvault`](../azure/README.md) — the Azure Key Vault secret provider.
 

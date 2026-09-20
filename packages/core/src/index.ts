@@ -2,6 +2,7 @@ export { createConfig } from "./create-config";
 export { env, type EnvOptions } from "./sources/env";
 export { fileLayers, type FileLayersOptions } from "./sources/file-layers";
 export { STRICT_BOOLEAN, registerFormats } from "./formats";
+export { pruneBranch } from "./schema-walk";
 export { SECRET_PREFIX, SECRET_NODE } from "./constants";
 export {
   ConfigError,

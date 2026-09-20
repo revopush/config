@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { getPath, leaves, setPath } from "../src/schema-walk";
+import { getPath, leaves, nodes, pruneBranch, setPath } from "../src/schema-walk";
+import { ConfigError } from "../src/errors";
 
 const schema = {
   api: {
@@ -54,5 +55,77 @@ describe("getPath and setPath", () => {
     const target: Record<string, unknown> = { a: 1 };
     setPath(target, "a.b", 2);
     expect(target).to.deep.equal({ a: { b: 2 } });
+  });
+});
+
+const branched = {
+  redis: { host: { doc: "Host", default: "" } },
+  platform: {
+    saas: { cloudflare: { uri: { doc: "R2", default: "" } } },
+    azure: { tables: { name: { doc: "Table", default: "t" } } },
+  },
+};
+
+describe("nodes", () => {
+  it("returns every node that is not a leaf, outermost first", () => {
+    expect(nodes(branched).map((n) => n.path)).to.deep.equal([
+      "redis",
+      "platform",
+      "platform.saas",
+      "platform.saas.cloudflare",
+      "platform.azure",
+      "platform.azure.tables",
+    ]);
+  });
+
+  it("does not descend into a leaf that happens to hold objects", () => {
+    expect(nodes({ key: { default: { nested: {} }, doc: "d" } })).to.deep.equal([]);
+  });
+});
+
+describe("pruneBranch", () => {
+  it("keeps the selected child and drops its siblings", () => {
+    const pruned = pruneBranch(branched, "platform", "saas");
+
+    expect(Object.keys(pruned.platform as object)).to.deep.equal(["saas"]);
+    expect(leaves(pruned).map((l) => l.path)).to.deep.equal([
+      "redis.host",
+      "platform.saas.cloudflare.uri",
+    ]);
+  });
+
+  it("leaves the rest of the schema untouched and does not mutate the input", () => {
+    const pruned = pruneBranch(branched, "platform", "azure");
+
+    expect(pruned.redis).to.equal(branched.redis);
+    expect(Object.keys(branched.platform as object)).to.deep.equal(["saas", "azure"]);
+  });
+
+  it("names what is declared when the selection is not one of them", () => {
+    expect(() => pruneBranch(branched, "platform", "gcp")).to.throw(
+      ConfigError,
+      /Unknown platform "gcp"\. The schema declares: saas, azure\./
+    );
+  });
+
+  it("refuses a branch key the schema does not have", () => {
+    expect(() => pruneBranch(branched, "cloud", "saas")).to.throw(ConfigError, /no "cloud" branch/);
+  });
+
+  // The branch name usually comes from the environment, so it reaches this unvalidated.
+  it("refuses a name that is only on the prototype", () => {
+    expect(() => pruneBranch(branched, "platform", "__proto__")).to.throw(
+      ConfigError,
+      /Unknown platform "__proto__"/
+    );
+    expect(() => pruneBranch(branched, "platform", "constructor")).to.throw(ConfigError);
+  });
+
+  // `doc`/`default`/`env` are entry metadata, not the deployments the schema declares.
+  it("refuses a branch key that is a leaf, rather than offering its metadata", () => {
+    expect(() => pruneBranch(branched, "redis", "host")).to.not.throw();
+    expect(() =>
+      pruneBranch({ redis: { doc: "H", default: { a: 1 } } }, "redis", "default")
+    ).to.throw(ConfigError, /no "redis" branch/);
   });
 });

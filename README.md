@@ -77,10 +77,15 @@ per-environment files, environment variables, secrets — applies on top, later 
 the `env:` binding on each schema key from `process.env`. Sources compose in an array, and writing
 your own is a ~15-line object — see [`docs/writing-a-source.md`](docs/writing-a-source.md).
 
-**Secrets.** Keys under the `secret.` node are resolved by a `SecretSource` — Azure Key Vault today,
+**Secrets.** Keys under a `secret` node are resolved by a `SecretSource` — Azure Key Vault today,
 any store of named values in principle — with the environment variable as the fallback when the
 source does not hold a given secret. See
 [`docs/writing-a-secret-source.md`](docs/writing-a-secret-source.md).
+
+**Branches.** One schema can describe several deployments: a branch node — `platform`, say — holds
+one child per deployment, and `pruneBranch()` keeps the one this process runs. Keys keep their
+path, so `platform.saas.cloudflare.uri` is the key, and another deployment's key is an unknown key
+rather than a default nothing resolved. See [`docs/typed-keys.md`](docs/typed-keys.md).
 
 **Calling `init()`.** `init()` is not idempotent — each call does a fresh load, re-reading every
 file and re-fetching every secret. That's deliberate: it's what lets a test change an environment
@@ -90,7 +95,8 @@ variable and re-read. Call it once, in one place, and share the resulting `confi
 
 - **Typed keys from the schema.** Generate a `ConfigKeys` interface from `schema.json` and
   `config.get()` becomes fully typed and autocompleted — no hand-maintained interface to drift from
-  the schema. See [`docs/typed-keys.md`](docs/typed-keys.md).
+  the schema. The same generator emits an accessor tree, so a caller can write
+  `redis.host` instead of quoting a key at all. See [`docs/typed-keys.md`](docs/typed-keys.md).
 - **Provenance via `explain()`.** Every value can be traced to the layer that set it: schema
   default, which file, which environment variable, which secret source. `toJSON()` gives the same
   view for logging, with `sensitive` keys redacted.
@@ -107,7 +113,7 @@ variable and re-read. Call it once, in one place, and share the resulting `confi
 - [`docs/writing-a-secret-source.md`](docs/writing-a-secret-source.md) — the `SecretSource`
   interface, its three rules, and a worked example.
 - [`docs/typed-keys.md`](docs/typed-keys.md) — generating and using the `ConfigKeys` interface,
-  the schema-to-TypeScript mapping table, and `--check` in CI.
+  the accessors, schema branches, the schema-to-TypeScript mapping table, and `--check` in CI.
 - [`docs/migrating.md`](docs/migrating.md) — moving from convict or node-config.
 
 ## Packages

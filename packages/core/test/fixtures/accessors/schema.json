@@ -1,0 +1,16 @@
+{
+  "redis": {
+    "host": { "doc": "Redis host", "default": "localhost", "env": "REDIS_HOST" },
+    "port": { "doc": "Redis port", "format": "port", "default": 6379, "env": "REDIS_PORT" }
+  },
+  "platform": {
+    "saas": {
+      "cloudflare": {
+        "uri": { "doc": "R2 S3-compatible endpoint", "default": "", "env": "CLOUDFLARE_URI" }
+      }
+    },
+    "azure": {
+      "tables": { "daily": { "doc": "Daily counters table", "default": "AcquisitionDaily" } }
+    }
+  }
+}

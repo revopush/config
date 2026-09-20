@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { emitTypes } from "../../src/codegen/emit";
+import { Schema } from "../../src/types";
 
 function line(schema: Record<string, unknown>, key: string): string {
   const match = emitTypes(schema)
@@ -76,7 +77,100 @@ describe("emitTypes", () => {
     const output = emitTypes({ a: { doc: "A", default: "" } });
     expect(output).to.contain("Do not edit");
     expect(output).to.contain("export interface ConfigKeys {");
+    expect(output).to.contain("export const bind =");
+    expect(output.endsWith(");\n")).to.equal(true);
+  });
+
+  it("emits only the keys when accessors are off", () => {
+    const output = emitTypes({ a: { doc: "A", default: "" } }, { accessors: false });
+
+    expect(output).to.contain("export interface ConfigKeys {");
+    expect(output).to.not.contain("bind");
+    expect(output).to.not.contain("import type");
     expect(output.endsWith("}\n")).to.equal(true);
+  });
+
+  it("imports ReadonlyConfig from the package, or from where it is told to", () => {
+    expect(emitTypes({ a: { doc: "A", default: "" } })).to.contain(
+      'import type { ReadonlyConfig } from "@revopush/config";'
+    );
+    expect(emitTypes({ a: { doc: "A", default: "" } }, { importFrom: "../config" })).to.contain(
+      'import type { ReadonlyConfig } from "../config";'
+    );
+  });
+
+  describe("per-node interfaces", () => {
+    const schema = {
+      redis: { host: { doc: "Host", default: "" } },
+      platform: { saas: { cloudflare: { uri: { doc: "R2", default: "" } } } },
+    };
+
+    it("names a node by its path, suffixed", () => {
+      const output = emitTypes(schema);
+
+      expect(output).to.contain("export interface RedisSettings {");
+      expect(output).to.contain("export interface PlatformSaasCloudflareSettings {");
+    });
+
+    it("references child nodes by name and types leaves by value", () => {
+      const output = emitTypes(schema);
+
+      expect(output).to.contain("readonly redis: RedisSettings;");
+      expect(output).to.contain("readonly cloudflare: PlatformSaasCloudflareSettings;");
+      expect(output).to.contain("readonly host: string;");
+    });
+
+    it("quotes a member name that is not an identifier", () => {
+      const output = emitTypes({ "redis-host": { doc: "H", default: "" } });
+
+      expect(output).to.contain('readonly "redis-host": string;');
+      expect(output).to.contain('get "redis-host"()');
+    });
+
+    it("refuses two paths that would emit one interface name", () => {
+      expect(() =>
+        emitTypes({
+          a: { bC: { x: { doc: "X", default: "" } } },
+          aB: { c: { y: { doc: "Y", default: "" } } },
+        })
+      ).to.throw(/both emit the interface ABCSettings/);
+    });
+
+    // `2faSettings` is not an identifier, so the generated file would not have parsed at all.
+    it("keeps a name starting with a digit a legal identifier", () => {
+      const output = emitTypes({ "2fa": { enabled: { doc: "E", default: false } } });
+
+      expect(output).to.contain("export interface _2faSettings {");
+      expect(output).to.contain('readonly "2fa": _2faSettings;');
+    });
+
+    it("refuses a node whose interface is the key interface's name", () => {
+      expect(() =>
+        emitTypes(
+          { redis: { host: { doc: "H", default: "" } } },
+          { interfaceName: "RedisSettings" }
+        )
+      ).to.throw(/also the key interface's name/);
+      expect(() =>
+        emitTypes({ redis: { host: { doc: "H", default: "" } } }, { interfaceName: "Settings" })
+      ).to.throw(/the schema root emits the interface Settings/);
+    });
+
+    // A node may be named `doc`; only a string is a doc comment.
+    it("does not read a node named doc as a doc comment", () => {
+      const output = emitTypes({ a: { doc: { x: { doc: "X", default: 1 } } } });
+
+      expect(output).to.contain("export interface ADocSettings {");
+      expect(output).to.contain("readonly doc: ADocSettings;");
+    });
+
+    // `__proto__: value` in an object literal sets the prototype instead of the property.
+    it("writes a __proto__ node through a computed key", () => {
+      const output = emitTypes(JSON.parse('{"__proto__":{"x":{"doc":"X","default":1}}}') as Schema);
+
+      expect(output).to.contain('["__proto__"]: {');
+      expect(output).to.not.contain("  __proto__: {");
+    });
   });
 
   it("accepts a custom interface name", () => {

@@ -41,7 +41,7 @@
     "build": "tsup"
   },
   "peerDependencies": {
-    "@revopush/config": "^0.2.0"
+    "@revopush/config": ">=0.2.0 <1.0.0"
   },
   "dependencies": {
     "@azure/identity": "^4.9.1",
