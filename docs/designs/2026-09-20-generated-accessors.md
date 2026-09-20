@@ -194,5 +194,8 @@ function should be renamed — it was never a good name for something returning 
 ## Open questions
 
 1. Do the accessors carry `has`/`explain` per node, or do those stay string-keyed?
+2. Should the generator take an `--include` list, emitting only named roots? Only worth it once a
+   schema is shared by services using disjoint parts of it — the factory already keeps unused
+   groups out of a service's imports.
 3. Version: this is additive to the core API, so a minor — but the emitted file's shape changes,
    which every consumer regenerates. Worth a major on the CLI's output format alone.
