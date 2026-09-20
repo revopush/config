@@ -1,5 +1,5 @@
 import convict from "convict";
-import { DEFAULT_LAYER, SECRET_PREFIX } from "./constants";
+import { DEFAULT_LAYER, secretSuffix } from "./constants";
 import { ConfigError, ConfigValidationError } from "./errors";
 import { registerFormats } from "./formats";
 import { getPath, leaves, setPath } from "./schema-walk";
@@ -139,7 +139,7 @@ export class Store {
       // `||`, not `??`: `entry.sensitive` is `boolean | undefined`, and an explicit `false` must
       // still fall through to the `secret.`-prefix check below, per the doc comment above.
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-      const redact = entry.sensitive || path.startsWith(SECRET_PREFIX);
+      const redact = entry.sensitive || secretSuffix(path) !== undefined;
       setPath(dumped, path, redact ? "[REDACTED]" : this.get(path));
     }
     return dumped;
@@ -169,7 +169,7 @@ export class Store {
   declaredSecrets(): Map<string, string> {
     const declared = new Map<string, string>();
     for (const path of this.layers.keys()) {
-      if (!path.startsWith(SECRET_PREFIX)) continue;
+      if (secretSuffix(path) === undefined) continue;
       const first = this.suppliedBy(path);
       if (first) declared.set(path, first.source);
     }

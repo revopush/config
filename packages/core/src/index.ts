@@ -3,7 +3,7 @@ export { env, type EnvOptions } from "./sources/env";
 export { fileLayers, type FileLayersOptions } from "./sources/file-layers";
 export { STRICT_BOOLEAN, registerFormats } from "./formats";
 export { pruneBranch, leaves, nodes, type SchemaLeaf, type SchemaNode } from "./schema-walk";
-export { SECRET_PREFIX, SECRET_NODE } from "./constants";
+export { SECRET_PREFIX, SECRET_NODE, secretSuffix } from "./constants";
 export {
   ConfigError,
   ConfigNotInitializedError,

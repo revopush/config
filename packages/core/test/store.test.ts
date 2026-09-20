@@ -217,3 +217,27 @@ describe("Store", () => {
     expect(JSON.stringify(store.toJSON())).to.not.contain("hunter2");
   });
 });
+
+describe("a secret declared inside a branch", () => {
+  const schema = {
+    platform: {
+      saas: { secret: { cloudflareApiToken: { doc: "Token", default: "", sensitive: true } } },
+    },
+  };
+
+  it("is declared to the secret source, not left to its environment variable", () => {
+    const store = new Store(schema);
+    store.merge("files", { platform: { saas: { secret: { cloudflareApiToken: "" } } } });
+
+    expect([...store.declaredSecrets().keys()]).to.deep.equal([
+      "platform.saas.secret.cloudflareApiToken",
+    ]);
+  });
+
+  it("is redacted from toJSON", () => {
+    const store = new Store(schema);
+    store.merge("files", { platform: { saas: { secret: { cloudflareApiToken: "hunter2" } } } });
+
+    expect(JSON.stringify(store.toJSON())).to.not.contain("hunter2");
+  });
+});

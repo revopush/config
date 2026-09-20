@@ -1,5 +1,5 @@
 import { ConfigError } from "./errors";
-import { SECRET_PREFIX } from "./constants";
+import { secretSuffix } from "./constants";
 import { leaves } from "./schema-walk";
 import { Schema } from "./types";
 
@@ -40,7 +40,7 @@ export function secretNames(
   for (const key of declared) {
     const entry = entries.get(key);
     if (!entry) continue;
-    const template = entry.secretName ?? kebab(key.slice(SECRET_PREFIX.length));
+    const template = entry.secretName ?? kebab(secretSuffix(key) ?? key);
     names.set(
       key,
       template.replace(PLACEHOLDER, (_, placeholder: string) => {
