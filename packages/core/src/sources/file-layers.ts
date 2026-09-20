@@ -86,7 +86,7 @@ export function fileLayers(options: FileLayersOptions = {}): Source {
         return {};
       }
 
-      return files.reduce<SourceValues>((loaded, file) => {
+      return files.reduce<SourceValues>((values, file) => {
         let parsed: unknown;
         try {
           parsed = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -94,7 +94,7 @@ export function fileLayers(options: FileLayersOptions = {}): Source {
           const detail = cause instanceof Error ? cause.message : String(cause);
           throw new ConfigError(`fileLayers() could not parse ${file}: ${detail}`);
         }
-        return merge(loaded, parsed as SourceValues);
+        return merge(values, parsed as SourceValues);
       }, {});
     },
   };

@@ -194,6 +194,8 @@ redis.port; // number
 
 Every leaf is a getter, so a value is read when it is touched — `bind()` runs at import, long
 before `init()` has resolved anything, and an object of plain values would capture the defaults.
+That also means a read costs what `config.get()` costs; it only looks free. In a hot loop, hoist
+it into a local as you would have hoisted the `get()`.
 
 Interfaces are named for their path with a `Settings` suffix: `RedisSettings`,
 `PlatformSaasCloudflareSettings`. Nodes get interfaces; leaves become properties. The name matters
@@ -211,6 +213,18 @@ is added, removed or renamed; a new key, or a whole new branch, needs no edit.
 
 `--no-accessors` emits only `ConfigKeys`, and `--import` points the generated
 `import type { ReadonlyConfig }` at something other than `@revopush/config`.
+
+### The generated file and your formatter
+
+The file is written in this generator's own style, which will not match every project's Prettier
+or lint configuration. Reformatting it makes `--check` fail, since that compares the file with
+what the generator produces. Exclude it instead — it carries a do-not-edit banner for the same
+reason:
+
+```
+# .prettierignore
+src/config/config-keys.generated.ts
+```
 
 ## Branches: one schema, several deployments
 
@@ -242,6 +256,6 @@ A layer file states each value at the path the schema declares, branch values in
 }
 ```
 
-Nothing rewrites paths on the way in. A file holds a deployment's common values *and* its branch
+Nothing rewrites paths on the way in. A file holds a deployment's common values _and_ its branch
 values, so rooting the whole file under its branch would move the common ones somewhere the schema
 never declared them.

@@ -1,5 +1,6 @@
 import { STRICT_BOOLEAN } from "../constants";
-import { leaves, nodes } from "../schema-walk";
+import { isLeaf, isObject, leaves, nodes } from "../schema-walk";
+import { ConfigError } from "../errors";
 import { Schema, SchemaEntry } from "../types";
 
 // convict's numeric formats, plus its `Number` type format in both spellings it accepts.
@@ -29,20 +30,16 @@ function tsType(entry: SchemaEntry): string {
   return entry.nullable || entry.default === null ? `${base} | null` : base;
 }
 
-/** Options for `emitTypes`. */
+/** Options for `emitTypes`. Every one has a default; see `emitTypes`. */
 export interface EmitOptions {
-  /** Name of the flat key interface. Default `ConfigKeys`. */
+  /** Name of the flat key interface. */
   interfaceName?: string;
-  /** Emit the per-node interfaces and the `bind` factory. Default true. */
+  /** Whether to emit the per-node interfaces and the `bind` factory. */
   accessors?: boolean;
-  /** Module the generated file imports `ReadonlyConfig` from. Default `@revopush/config`. */
+  /** Module the generated file imports `ReadonlyConfig` from. Consumers want the default; an
+   *  in-repo generator pointing at a relative path is why this exists. */
   importFrom?: string;
 }
-
-const isObject = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const isLeaf = (value: unknown): value is SchemaEntry => isObject(value) && "default" in value;
 
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
@@ -65,52 +62,56 @@ function typeName(path: string): string {
   return `${pascal}Settings`;
 }
 
-const docComment = (entry: { doc?: string }, indent: string): string =>
-  entry.doc ? `${indent}/** ${entry.doc.replace(/\*\//g, "*\\/")} */\n` : "";
+const docComment = (entry: { doc?: string }): string =>
+  entry.doc ? `  /** ${entry.doc.replace(/\*\//g, "*\\/")} */\n` : "";
 
-/** One interface per node: its leaves typed, its child nodes referenced by name. */
-function emitInterface(path: string, node: Schema): string {
-  const members = Object.entries(node)
+/** A node's own children, each with the dotted path it is addressed by. */
+function members<T>(
+  path: string,
+  node: Schema,
+  render: (key: string, childPath: string, value: Schema) => T
+): T[] {
+  return Object.entries(node)
     .filter(([, value]) => isObject(value))
-    .map(([key, value]) => {
-      const childPath = path ? `${path}.${key}` : key;
-      const type = isLeaf(value) ? tsType(value) : typeName(childPath);
-      return `${docComment(value as SchemaEntry, "  ")}  readonly ${member(key)}: ${type};`;
-    });
-
-  const header = path ? `/** ${path} */\n` : "";
-  if (members.length === 0) return `${header}export interface ${typeName(path)} {}`;
-  return `${header}export interface ${typeName(path)} {\n${members.join("\n")}\n}`;
+    .map(([key, value]) => render(key, path ? `${path}.${key}` : key, value as Schema));
 }
 
-/** The accessor tree: a getter per leaf, so a value is read when touched rather than at import. */
-function emitAccessors(path: string, node: Schema, indent: string): string {
-  const entries = Object.entries(node)
-    .filter(([, value]) => isObject(value))
-    .map(([key, value]) => {
-      const childPath = path ? `${path}.${key}` : key;
-      if (isLeaf(value)) {
-        return (
-          `${indent}  get ${member(key)}() {\n` +
-          `${indent}    return c.get(${JSON.stringify(childPath)});\n` +
-          `${indent}  },`
-        );
-      }
-      return `${indent}  ${member(key)}: ${emitAccessors(childPath, value as Schema, `${indent}  `)},`;
-    });
+function emitInterface(path: string, node: Schema): string {
+  const lines = members(
+    path,
+    node,
+    (key, childPath, value) =>
+      `${docComment(value)}  readonly ${member(key)}: ${isLeaf(value) ? tsType(value) : typeName(childPath)};`
+  );
 
-  if (entries.length === 0) return "{}";
-  return `{\n${entries.join("\n")}\n${indent}}`;
+  const header = path ? `/** ${path} */\n` : "";
+  const body = lines.length === 0 ? "" : `\n${lines.join("\n")}\n`;
+  return `${header}export interface ${typeName(path)} {${body}}`;
+}
+
+/** A getter per leaf, so a value is read when it is touched rather than when `bind` is called. */
+function emitAccessors(path: string, node: Schema, indent: string): string {
+  const lines = members(path, node, (key, childPath, value) =>
+    isLeaf(value)
+      ? `${indent}  get ${member(key)}() {\n` +
+        `${indent}    return c.get(${JSON.stringify(childPath)});\n` +
+        `${indent}  },`
+      : `${indent}  ${member(key)}: ${emitAccessors(childPath, value, `${indent}  `)},`
+  );
+
+  return lines.length === 0 ? "{}" : `{\n${lines.join("\n")}\n${indent}}`;
 }
 
 /** Two paths whose PascalCase collapses to one name would emit one interface for both. */
-function assertDistinctNames(schema: Schema): void {
+function assertDistinctNames(all: { path: string }[]): void {
   const seen = new Map<string, string>();
-  for (const { path } of nodes(schema)) {
+  for (const { path } of all) {
     const name = typeName(path);
     const taken = seen.get(name);
     if (taken !== undefined) {
-      throw new Error(`Nodes "${taken}" and "${path}" both emit the interface ${name}. Rename one.`);
+      throw new ConfigError(
+        `Nodes "${taken}" and "${path}" both emit the interface ${name}. Rename one.`
+      );
     }
     seen.set(name, path);
   }
@@ -126,31 +127,25 @@ function assertDistinctNames(schema: Schema): void {
  */
 export function emitTypes(schema: Schema, options: EmitOptions = {}): string {
   const name = options.interfaceName ?? "ConfigKeys";
-  const entries = leaves(schema);
+  const importFrom = options.importFrom ?? "@revopush/config";
 
   const banner =
     "// Generated by `revopush-config types`. Do not edit.\n" +
     "// Re-run the generator after changing schema.json.\n\n";
 
-  if (entries.length === 0) return `${banner}export interface ${name} {}\n`;
-
-  const keys = entries
-    .map(
-      ({ path, entry }) => `${docComment(entry, "  ")}  ${JSON.stringify(path)}: ${tsType(entry)};`
-    )
+  const keys = leaves(schema)
+    .map(({ path, entry }) => `${docComment(entry)}  ${JSON.stringify(path)}: ${tsType(entry)};`)
     .join("\n");
-  const keyInterface = `export interface ${name} {\n${keys}\n}`;
+  const keyInterface = `export interface ${name} {${keys ? `\n${keys}\n` : ""}}`;
 
   if (options.accessors === false) return `${banner}${keyInterface}\n`;
 
-  assertDistinctNames(schema);
+  // The root is a node too — it is what `Settings` is emitted from, and it can collide like any
+  // other name.
+  const all = [{ path: "", node: schema }, ...nodes(schema)];
+  assertDistinctNames(all);
 
-  const importFrom = options.importFrom ?? "@revopush/config";
-  const interfaces = [
-    emitInterface("", schema),
-    ...nodes(schema).map(({ path, node }) => emitInterface(path, node)),
-  ].join("\n\n");
-
+  const interfaces = all.map(({ path, node }) => emitInterface(path, node)).join("\n\n");
   const bind =
     "/** Binds the accessors to a config. A factory, so this file imports no module of yours. */\n" +
     `export const bind = (c: ReadonlyConfig<${name}>): ${typeName("")} => (${emitAccessors("", schema, "")});`;

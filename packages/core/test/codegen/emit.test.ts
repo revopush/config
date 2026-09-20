@@ -128,7 +128,10 @@ describe("emitTypes", () => {
 
     it("refuses two paths that would emit one interface name", () => {
       expect(() =>
-        emitTypes({ a: { bC: { x: { doc: "X", default: "" } } }, aB: { c: { y: { doc: "Y", default: "" } } } })
+        emitTypes({
+          a: { bC: { x: { doc: "X", default: "" } } },
+          aB: { c: { y: { doc: "Y", default: "" } } },
+        })
       ).to.throw(/both emit the interface ABCSettings/);
     });
   });

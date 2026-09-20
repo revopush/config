@@ -1,5 +1,5 @@
 import { ConfigError } from "./errors";
-import { secretSuffix } from "./constants";
+import { secretSuffix } from "./schema-walk";
 import { leaves } from "./schema-walk";
 import { Schema } from "./types";
 
@@ -40,6 +40,7 @@ export function secretNames(
   for (const key of declared) {
     const entry = entries.get(key);
     if (!entry) continue;
+    // Callers pass declared secrets, so the suffix is there; the fallback keeps this total.
     const template = entry.secretName ?? kebab(secretSuffix(key) ?? key);
     names.set(
       key,

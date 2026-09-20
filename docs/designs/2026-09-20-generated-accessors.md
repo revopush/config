@@ -1,6 +1,6 @@
 # Generated accessors and schema branches — design
 
-**Status:** proposed · **Affects:** `@revopush/config` core, the two repos that consume it
+**Status:** shipped, with changes · **Affects:** `@revopush/config` core, the two repos that consume it
 
 ## The problem
 
@@ -128,12 +128,22 @@ new R2BlobStore({
 });
 ```
 
-## What the library has to grow
+## What the library grew
 
-- `--branch <key>` on the `types` command, naming the branch node (`platform`).
-- `pruneBranch(schema, branch, name)` in core, used by `createConfig` when given a branch
-  selection, and by the generator so both see the same tree.
+- `pruneBranch(schema, branch, name)` in core, applied by the caller before `createConfig`.
 - Emission of per-node interfaces and the `bind` factory alongside `ConfigKeys`.
+
+Two things this design called for were not built, deliberately:
+
+- **No `--branch` on the generator.** The platform is chosen at run time from an environment
+  variable, so one build serves every platform and the generated types must cover all of them.
+  Pruning is therefore a run-time filter: reading another platform's key throws `Unknown
+configuration key` rather than failing to compile. A build that targets one platform could
+  prune at generation time too, and would then get the compile error — worth adding when a
+  consumer builds that way.
+- **No `fileLayers({ root })`.** Wiring a consumer showed the idea was wrong: a layer file holds
+  one deployment's common values _and_ its branch values, so rooting the whole file moves the
+  common ones to paths the schema never declares.
 
 `get()`, `has()`, `explain()` and `toJSON()` are untouched. Strings remain the interface for
 dynamic keys; the accessors are an ergonomic layer over them, not a replacement.

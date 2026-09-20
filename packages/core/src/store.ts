@@ -1,8 +1,8 @@
 import convict from "convict";
-import { DEFAULT_LAYER, secretSuffix } from "./constants";
+import { DEFAULT_LAYER } from "./constants";
 import { ConfigError, ConfigValidationError } from "./errors";
 import { registerFormats } from "./formats";
-import { getPath, leaves, setPath } from "./schema-walk";
+import { getPath, isSecret, leaves, setPath } from "./schema-walk";
 import { Provenance, Schema, SchemaEntry, SourceValues } from "./types";
 
 interface Layer {
@@ -129,7 +129,7 @@ export class Store {
   /**
    * The resolved configuration with secrets redacted.
    *
-   * A key is redacted when it is marked `sensitive` *or* when it lives under the `secret.` node:
+   * A key is redacted when it is marked `sensitive` *or* when it lives under a `secret` node:
    * everything under that node is by definition a secret, and requiring `sensitive: true` on each
    * one would make a forgotten flag leak a vault value into whatever logged this.
    */
@@ -137,9 +137,9 @@ export class Store {
     const dumped: Record<string, unknown> = {};
     for (const [path, entry] of this.entries) {
       // `||`, not `??`: `entry.sensitive` is `boolean | undefined`, and an explicit `false` must
-      // still fall through to the `secret.`-prefix check below, per the doc comment above.
+      // still fall through to the secret-node check below, per the doc comment above.
       // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
-      const redact = entry.sensitive || secretSuffix(path) !== undefined;
+      const redact = entry.sensitive || isSecret(path);
       setPath(dumped, path, redact ? "[REDACTED]" : this.get(path));
     }
     return dumped;
@@ -169,7 +169,7 @@ export class Store {
   declaredSecrets(): Map<string, string> {
     const declared = new Map<string, string>();
     for (const path of this.layers.keys()) {
-      if (secretSuffix(path) === undefined) continue;
+      if (!isSecret(path)) continue;
       const first = this.suppliedBy(path);
       if (first) declared.set(path, first.source);
     }

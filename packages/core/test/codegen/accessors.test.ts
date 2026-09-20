@@ -4,10 +4,14 @@ import * as path from "node:path";
 
 import { createConfig } from "../../src/create-config";
 import { env } from "../../src/sources/env";
-import { emitTypes } from "../../src/codegen/emit";
+import { runTypes } from "../../src/codegen/cli";
 import { pruneBranch } from "../../src/schema-walk";
 import { Schema } from "../../src/types";
-import { bind, type ConfigKeys, type PlatformSaasCloudflareSettings } from "../fixtures/accessors/generated";
+import {
+  bind,
+  type ConfigKeys,
+  type PlatformSaasCloudflareSettings,
+} from "../fixtures/accessors/generated";
 
 const DIR = path.join(__dirname, "..", "fixtures", "accessors");
 const schema = JSON.parse(fs.readFileSync(path.join(DIR, "schema.json"), "utf8")) as Schema;
@@ -21,19 +25,34 @@ const configFor = async (values: Record<string, string>, platform?: string) => {
   return config;
 };
 
-// The fixture is what the emitter produces for the fixture schema. Regenerating here is what
-// stops the committed file — which the tests below actually run — from drifting from the emitter.
+// The tests below run the committed fixture, so it has to be what the generator produces today.
+// Asking the CLI keeps that honest and covers --import at the same time.
 describe("the committed fixture", () => {
-  it("is what the emitter produces today", () => {
-    const expected = emitTypes(schema, { importFrom: "../../../src/index" });
+  it("is what the generator writes today", async () => {
+    const silent = { log: () => undefined, error: () => undefined };
 
-    expect(fs.readFileSync(path.join(DIR, "generated.ts"), "utf8")).to.equal(expected);
+    const code = await runTypes(
+      [
+        "--dir",
+        DIR,
+        "--out",
+        path.join(DIR, "generated.ts"),
+        "--check",
+        "--import",
+        "../../../src/index",
+      ],
+      silent
+    );
+
+    expect(code).to.equal(0);
   });
 });
 
 describe("bound accessors", () => {
   it("reads a value through the path, with no string at the call site", async () => {
-    const { redis, platform } = bind(await configFor({ REDIS_HOST: "cache", CLOUDFLARE_URI: "https://r2" }));
+    const { redis, platform } = bind(
+      await configFor({ REDIS_HOST: "cache", CLOUDFLARE_URI: "https://r2" })
+    );
 
     expect(redis.host).to.equal("cache");
     expect(platform.saas.cloudflare.uri).to.equal("https://r2");
@@ -48,7 +67,10 @@ describe("bound accessors", () => {
 
   // A getter, not a value: bind() runs at import, long before init() has resolved anything.
   it("reads when touched rather than when bound", async () => {
-    const config = createConfig<ConfigKeys>({ schema, sources: [env({ from: { REDIS_HOST: "late" } })] });
+    const config = createConfig<ConfigKeys>({
+      schema,
+      sources: [env({ from: { REDIS_HOST: "late" } })],
+    });
     const { redis } = bind(config);
 
     expect(() => redis.host).to.throw();
