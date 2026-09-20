@@ -233,9 +233,15 @@ import { pruneBranch } from "@revopush/config";
 const schema = pruneBranch(loadSchema(dir), "platform", PLATFORM);
 ```
 
-Layer files stay as they are. A branch's files live in their own directory, so `fileLayers` roots
-them instead of every file restating the branch its directory already names:
+A layer file states each value at the path the schema declares, branch values included:
 
-```ts
-fileLayers({ dir: `config/${PLATFORM}`, environment, root: `platform.${PLATFORM}` });
+```json
+{
+  "redis": { "host": "cache.internal" },
+  "platform": { "saas": { "cloudflare": { "accountId": "..." } } }
+}
 ```
+
+Nothing rewrites paths on the way in. A file holds a deployment's common values *and* its branch
+values, so rooting the whole file under its branch would move the common ones somewhere the schema
+never declared them.
