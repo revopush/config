@@ -111,4 +111,21 @@ describe("pruneBranch", () => {
   it("refuses a branch key the schema does not have", () => {
     expect(() => pruneBranch(branched, "cloud", "saas")).to.throw(ConfigError, /no "cloud" branch/);
   });
+
+  // The branch name usually comes from the environment, so it reaches this unvalidated.
+  it("refuses a name that is only on the prototype", () => {
+    expect(() => pruneBranch(branched, "platform", "__proto__")).to.throw(
+      ConfigError,
+      /Unknown platform "__proto__"/
+    );
+    expect(() => pruneBranch(branched, "platform", "constructor")).to.throw(ConfigError);
+  });
+
+  // `doc`/`default`/`env` are entry metadata, not the deployments the schema declares.
+  it("refuses a branch key that is a leaf, rather than offering its metadata", () => {
+    expect(() => pruneBranch(branched, "redis", "host")).to.not.throw();
+    expect(() =>
+      pruneBranch({ redis: { doc: "H", default: { a: 1 } } }, "redis", "default")
+    ).to.throw(ConfigError, /no "redis" branch/);
+  });
 });

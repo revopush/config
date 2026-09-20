@@ -60,11 +60,15 @@ export function nodes(schema: Schema): SchemaNode[] {
  */
 export function pruneBranch(schema: Schema, branchKey: string, name: string): Schema {
   const branch = schema[branchKey] as unknown;
-  if (!isObject(branch)) {
+  // A leaf is not a branch: its `doc`/`default`/`env` are entry metadata, and reporting those as
+  // the deployments the schema declares would send the caller hunting a typo that is not there.
+  if (!isObject(branch) || isLeaf(branch)) {
     throw new ConfigError(`The schema has no "${branchKey}" branch to select from.`);
   }
 
-  const selected = branch[name];
+  // Own keys only: `name` typically comes from the environment, and `__proto__` would otherwise
+  // find `Object.prototype` here and prune the branch to a node declaring nothing at all.
+  const selected = Object.prototype.hasOwnProperty.call(branch, name) ? branch[name] : undefined;
   if (!isObject(selected)) {
     const declared = Object.keys(branch);
     throw new ConfigError(

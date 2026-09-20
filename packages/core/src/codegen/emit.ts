@@ -47,6 +47,13 @@ const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 const member = (name: string): string => (IDENTIFIER.test(name) ? name : JSON.stringify(name));
 
 /**
+ * The same, for a key in an object literal. `__proto__: value` — quoted or not — sets the object's
+ * prototype instead of defining the property, so that one name has to go through a computed key.
+ */
+const literalKey = (name: string): string =>
+  name === "__proto__" ? `[${JSON.stringify(name)}]` : member(name);
+
+/**
  * The interface name for a node: its path in PascalCase, suffixed.
  *
  * The suffix is not decoration. `History` and `Response` are global types and `Redis` and
@@ -59,11 +66,17 @@ function typeName(path: string): string {
     .map((segment) => segment.replace(/[^A-Za-z0-9]/g, ""))
     .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
     .join("");
-  return `${pascal}Settings`;
+  // A node named `2fa` would otherwise emit `interface 2faSettings`, which does not parse.
+  return /^[0-9]/.test(pascal) ? `_${pascal}Settings` : `${pascal}Settings`;
 }
 
-const docComment = (entry: { doc?: string }): string =>
-  entry.doc ? `  /** ${entry.doc.replace(/\*\//g, "*\\/")} */\n` : "";
+/** The root has no path, and naming it `""` in an error message helps nobody. */
+const describePath = (path: string): string => (path === "" ? "the schema root" : `"${path}"`);
+
+// `doc` is a node name like any other, so a schema may hold a node at `a.doc`; only a string is a
+// doc comment, and anything else would have thrown on `.replace` below.
+const docComment = (entry: { doc?: unknown }): string =>
+  typeof entry.doc === "string" ? `  /** ${entry.doc.replace(/\*\//g, "*\\/")} */\n` : "";
 
 /** A node's own children, each with the dotted path it is addressed by. */
 function members<T>(
@@ -96,21 +109,30 @@ function emitAccessors(path: string, node: Schema, indent: string): string {
       ? `${indent}  get ${member(key)}() {\n` +
         `${indent}    return c.get(${JSON.stringify(childPath)});\n` +
         `${indent}  },`
-      : `${indent}  ${member(key)}: ${emitAccessors(childPath, value, `${indent}  `)},`
+      : `${indent}  ${literalKey(key)}: ${emitAccessors(childPath, value, `${indent}  `)},`
   );
 
   return lines.length === 0 ? "{}" : `{\n${lines.join("\n")}\n${indent}}`;
 }
 
-/** Two paths whose PascalCase collapses to one name would emit one interface for both. */
-function assertDistinctNames(all: { path: string }[]): void {
+/**
+ * Two paths whose PascalCase collapses to one name would emit one interface for both — and so
+ * would a node whose name is the one `--interface` asked for, which is emitted from the same file.
+ */
+function assertDistinctNames(all: { path: string }[], keyInterface: string): void {
   const seen = new Map<string, string>();
   for (const { path } of all) {
     const name = typeName(path);
+    if (name === keyInterface) {
+      throw new ConfigError(
+        `Node ${describePath(path)} emits the interface ${name}, which is also the key interface's ` +
+          `name. Pass a different --interface.`
+      );
+    }
     const taken = seen.get(name);
     if (taken !== undefined) {
       throw new ConfigError(
-        `Nodes "${taken}" and "${path}" both emit the interface ${name}. Rename one.`
+        `Nodes ${describePath(taken)} and ${describePath(path)} both emit the interface ${name}. Rename one.`
       );
     }
     seen.set(name, path);
@@ -143,7 +165,7 @@ export function emitTypes(schema: Schema, options: EmitOptions = {}): string {
   // The root is a node too — it is what `Settings` is emitted from, and it can collide like any
   // other name.
   const all = [{ path: "", node: schema }, ...nodes(schema)];
-  assertDistinctNames(all);
+  assertDistinctNames(all, name);
 
   const interfaces = all.map(({ path, node }) => emitInterface(path, node)).join("\n\n");
   const bind =

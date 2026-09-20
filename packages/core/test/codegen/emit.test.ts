@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { emitTypes } from "../../src/codegen/emit";
+import { Schema } from "../../src/types";
 
 function line(schema: Record<string, unknown>, key: string): string {
   const match = emitTypes(schema)
@@ -133,6 +134,42 @@ describe("emitTypes", () => {
           aB: { c: { y: { doc: "Y", default: "" } } },
         })
       ).to.throw(/both emit the interface ABCSettings/);
+    });
+
+    // `2faSettings` is not an identifier, so the generated file would not have parsed at all.
+    it("keeps a name starting with a digit a legal identifier", () => {
+      const output = emitTypes({ "2fa": { enabled: { doc: "E", default: false } } });
+
+      expect(output).to.contain("export interface _2faSettings {");
+      expect(output).to.contain('readonly "2fa": _2faSettings;');
+    });
+
+    it("refuses a node whose interface is the key interface's name", () => {
+      expect(() =>
+        emitTypes(
+          { redis: { host: { doc: "H", default: "" } } },
+          { interfaceName: "RedisSettings" }
+        )
+      ).to.throw(/also the key interface's name/);
+      expect(() =>
+        emitTypes({ redis: { host: { doc: "H", default: "" } } }, { interfaceName: "Settings" })
+      ).to.throw(/the schema root emits the interface Settings/);
+    });
+
+    // A node may be named `doc`; only a string is a doc comment.
+    it("does not read a node named doc as a doc comment", () => {
+      const output = emitTypes({ a: { doc: { x: { doc: "X", default: 1 } } } });
+
+      expect(output).to.contain("export interface ADocSettings {");
+      expect(output).to.contain("readonly doc: ADocSettings;");
+    });
+
+    // `__proto__: value` in an object literal sets the prototype instead of the property.
+    it("writes a __proto__ node through a computed key", () => {
+      const output = emitTypes(JSON.parse('{"__proto__":{"x":{"doc":"X","default":1}}}') as Schema);
+
+      expect(output).to.contain('["__proto__"]: {');
+      expect(output).to.not.contain("  __proto__: {");
     });
   });
 
