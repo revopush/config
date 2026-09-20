@@ -252,6 +252,11 @@ import { pruneBranch } from "@revopush/config";
 const schema = pruneBranch(loadSchema(dir), "platform", PLATFORM);
 ```
 
+Two branches may declare the same secret name — `platform.saas.secret.apiToken` and
+`platform.azure.secret.apiToken` both ask their store for `api-token`. Pruning is what makes that
+safe: one branch survives a load, so only one of them is ever resolved. Hand `createConfig` an
+unpruned schema and both would ask for the same entry.
+
 A layer file states each value at the path the schema declares, branch values included:
 
 ```json
