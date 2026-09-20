@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { ConfigError } from "../errors";
+import { setPath } from "../schema-walk";
 import { Source, SourceContext, SourceValues } from "../types";
 
 /**
@@ -17,6 +18,12 @@ export interface FileLayersOptions {
   names?: (environment: string, region: string) => string[];
   /** Overrides the source name shown in errors and `explain()`. */
   name?: string;
+  /**
+   * Nests everything these files supply under this dotted path. A branch's layer files live in
+   * their own directory, so `root: "platform.saas"` lets `config/saas/production.json` keep
+   * setting `cloudflare.accountId` rather than restating the branch the directory already names.
+   */
+  root?: string;
   /**
    * Throw a `ConfigError` naming the environment and directory when no layer file matched, instead
    * of warning and continuing with schema defaults. Defaults to `false`, so local development
@@ -86,7 +93,7 @@ export function fileLayers(options: FileLayersOptions = {}): Source {
         return {};
       }
 
-      return files.reduce<SourceValues>((values, file) => {
+      const values = files.reduce<SourceValues>((loaded, file) => {
         let parsed: unknown;
         try {
           parsed = JSON.parse(fs.readFileSync(file, "utf8"));
@@ -94,8 +101,20 @@ export function fileLayers(options: FileLayersOptions = {}): Source {
           const detail = cause instanceof Error ? cause.message : String(cause);
           throw new ConfigError(`fileLayers() could not parse ${file}: ${detail}`);
         }
-        return merge(values, parsed as SourceValues);
+        return merge(loaded, parsed as SourceValues);
       }, {});
+
+      return options.root ? rooted(options.root, values) : values;
     },
   };
+}
+
+function rooted(root: string, values: SourceValues): SourceValues {
+  const wrapped: SourceValues = {};
+  setPath(wrapped, root, values);
+  // setPath refuses a path that would write through the prototype chain, leaving nothing behind.
+  if (Object.keys(wrapped).length === 0) {
+    throw new ConfigError(`fileLayers() cannot root values at "${root}".`);
+  }
+  return wrapped;
 }

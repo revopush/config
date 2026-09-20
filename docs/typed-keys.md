@@ -172,3 +172,70 @@ the configuration: a key it claims is `number` might no longer exist, or a key t
 be missing from the type entirely. That is worse than shipping without generated types at all, since
 nothing signals the mismatch until a caller hits it at runtime, exactly the failure mode typed keys
 exist to prevent.
+
+## Accessors: reading without strings
+
+Alongside `ConfigKeys`, the generator emits one interface per schema node and a `bind` factory,
+so a caller can walk the schema instead of quoting a key:
+
+```ts
+// config/index.ts
+export const config = createConfig<ConfigKeys>({ schema, sources: [...] });
+export const { redis, platform } = bind(config);
+```
+
+```ts
+// anywhere
+import { platform, redis } from "./config";
+
+platform.saas.cloudflare.uri; // string
+redis.port; // number
+```
+
+Every leaf is a getter, so a value is read when it is touched — `bind()` runs at import, long
+before `init()` has resolved anything, and an object of plain values would capture the defaults.
+
+Interfaces are named for their path with a `Settings` suffix: `RedisSettings`,
+`PlatformSaasCloudflareSettings`. Nodes get interfaces; leaves become properties. The name matters
+in one position only — naming a group in a signature:
+
+```ts
+function buildStore(cloudflare: PlatformSaasCloudflareSettings) { … }
+
+buildStore(platform.saas.cloudflare);
+```
+
+The destructuring in `config/index.ts` is the one line to maintain, and it names the roots this
+service actually uses — worth having when one schema is shared. It changes only when a root group
+is added, removed or renamed; a new key, or a whole new branch, needs no edit.
+
+`--no-accessors` emits only `ConfigKeys`, and `--import` points the generated
+`import type { ReadonlyConfig }` at something other than `@revopush/config`.
+
+## Branches: one schema, several deployments
+
+A branch holds one deployment's keys per child:
+
+```json
+"platform": {
+  "saas":  { "cloudflare": { "uri": { "doc": "R2 endpoint", "default": "" } } },
+  "azure": { "tables": { "daily": { "doc": "Daily counters", "default": "AcquisitionDaily" } } }
+}
+```
+
+Keys keep their path — `platform.saas.cloudflare.uri` is the key, and nothing is flattened. Prune
+to the branch this process runs on, and another deployment's key becomes an unknown key rather
+than a default read from a schema nobody resolved:
+
+```ts
+import { pruneBranch } from "@revopush/config";
+
+const schema = pruneBranch(loadSchema(dir), "platform", PLATFORM);
+```
+
+Layer files stay as they are. A branch's files live in their own directory, so `fileLayers` roots
+them instead of every file restating the branch its directory already names:
+
+```ts
+fileLayers({ dir: `config/${PLATFORM}`, environment, root: `platform.${PLATFORM}` });
+```

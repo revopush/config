@@ -76,7 +76,61 @@ describe("emitTypes", () => {
     const output = emitTypes({ a: { doc: "A", default: "" } });
     expect(output).to.contain("Do not edit");
     expect(output).to.contain("export interface ConfigKeys {");
+    expect(output).to.contain("export const bind =");
+    expect(output.endsWith(");\n")).to.equal(true);
+  });
+
+  it("emits only the keys when accessors are off", () => {
+    const output = emitTypes({ a: { doc: "A", default: "" } }, { accessors: false });
+
+    expect(output).to.contain("export interface ConfigKeys {");
+    expect(output).to.not.contain("bind");
+    expect(output).to.not.contain("import type");
     expect(output.endsWith("}\n")).to.equal(true);
+  });
+
+  it("imports ReadonlyConfig from the package, or from where it is told to", () => {
+    expect(emitTypes({ a: { doc: "A", default: "" } })).to.contain(
+      'import type { ReadonlyConfig } from "@revopush/config";'
+    );
+    expect(emitTypes({ a: { doc: "A", default: "" } }, { importFrom: "../config" })).to.contain(
+      'import type { ReadonlyConfig } from "../config";'
+    );
+  });
+
+  describe("per-node interfaces", () => {
+    const schema = {
+      redis: { host: { doc: "Host", default: "" } },
+      platform: { saas: { cloudflare: { uri: { doc: "R2", default: "" } } } },
+    };
+
+    it("names a node by its path, suffixed", () => {
+      const output = emitTypes(schema);
+
+      expect(output).to.contain("export interface RedisSettings {");
+      expect(output).to.contain("export interface PlatformSaasCloudflareSettings {");
+    });
+
+    it("references child nodes by name and types leaves by value", () => {
+      const output = emitTypes(schema);
+
+      expect(output).to.contain("readonly redis: RedisSettings;");
+      expect(output).to.contain("readonly cloudflare: PlatformSaasCloudflareSettings;");
+      expect(output).to.contain("readonly host: string;");
+    });
+
+    it("quotes a member name that is not an identifier", () => {
+      const output = emitTypes({ "redis-host": { doc: "H", default: "" } });
+
+      expect(output).to.contain('readonly "redis-host": string;');
+      expect(output).to.contain('get "redis-host"()');
+    });
+
+    it("refuses two paths that would emit one interface name", () => {
+      expect(() =>
+        emitTypes({ a: { bC: { x: { doc: "X", default: "" } } }, aB: { c: { y: { doc: "Y", default: "" } } } })
+      ).to.throw(/both emit the interface ABCSettings/);
+    });
   });
 
   it("accepts a custom interface name", () => {

@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { ConfigError } from "../../src/errors";
+import { getPath } from "../../src/schema-walk";
 import { fileLayers } from "../../src/sources/file-layers";
 import { Schema, SourceContext } from "../../src/types";
 
@@ -158,5 +159,31 @@ describe("fileLayers source", () => {
       fs.rmSync(dir, { recursive: true, force: true });
       delete (Object.prototype as Record<string, unknown>).polluted;
     }
+  });
+});
+
+describe("rooting a branch's layer files", () => {
+  it("nests what the files supply under the given path", async () => {
+    const values = await fileLayers({ environment: "production", root: "platform.saas" }).load(
+      context(DIR)
+    );
+
+    expect(getPath(values, "platform.saas.redis.host")).to.equal("prod-redis");
+  });
+
+  // The directory already names the branch; the file should not have to restate it.
+  it("leaves the files themselves unchanged in shape", async () => {
+    const plain = await fileLayers({ environment: "production" }).load(context(DIR));
+    const nested = await fileLayers({ environment: "production", root: "platform.saas" }).load(
+      context(DIR)
+    );
+
+    expect((nested.platform as Record<string, unknown>).saas).to.deep.equal(plain);
+  });
+
+  it("refuses a root that would write through the prototype chain", () => {
+    const source = fileLayers({ environment: "production", root: "__proto__.polluted" });
+
+    expect(() => source.load(context(DIR))).to.throw(ConfigError, /cannot root values/);
   });
 });

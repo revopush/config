@@ -1,3 +1,4 @@
+import { ConfigError } from "./errors";
 import { Schema, SchemaEntry } from "./types";
 
 /** A schema leaf found by `leaves()`: its dotted path and the entry at that path. */
@@ -24,6 +25,52 @@ function walk(node: Record<string, unknown>, prefix: string, found: SchemaLeaf[]
     if ("default" in value) found.push({ path, entry: value as unknown as SchemaEntry });
     else walk(value, path, found);
   }
+}
+
+/** A schema node: an object that is not a leaf. Its dotted path, and the node itself. */
+export interface SchemaNode {
+  path: string;
+  node: Schema;
+}
+
+/** Every node, outermost first. A node carrying `default` is a leaf and is not one. */
+export function nodes(schema: Schema): SchemaNode[] {
+  const found: SchemaNode[] = [];
+  walkNodes(schema, "", found);
+  return found;
+}
+
+function walkNodes(node: Record<string, unknown>, prefix: string, found: SchemaNode[]): void {
+  for (const [key, value] of Object.entries(node)) {
+    if (!isObject(value) || "default" in value) continue;
+    const path = prefix ? `${prefix}.${key}` : key;
+    found.push({ path, node: value });
+    walkNodes(value, path, found);
+  }
+}
+
+/**
+ * Keeps one child of a branch node and drops its siblings, leaving every other key untouched.
+ *
+ * A branch holds one deployment's keys per child — `platform.saas`, `platform.azure`. Pruning to
+ * the selected one is what makes another deployment's key an unknown key rather than a default
+ * silently read from a schema nobody resolved. Keys keep their path: nothing is flattened.
+ */
+export function pruneBranch(schema: Schema, branchKey: string, name: string): Schema {
+  const branch = schema[branchKey] as unknown;
+  if (!isObject(branch)) {
+    throw new ConfigError(`pruneBranch(): the schema has no "${branchKey}" node to prune.`);
+  }
+
+  const selected = branch[name];
+  if (!isObject(selected)) {
+    const declared = Object.keys(branch);
+    throw new ConfigError(
+      `pruneBranch(): "${branchKey}" declares no "${name}". Declared: ${declared.join(", ") || "nothing"}.`
+    );
+  }
+
+  return { ...schema, [branchKey]: { [name]: selected } };
 }
 
 /** Reads a dotted path. Returns undefined when any segment is absent, which `null` is not. */
