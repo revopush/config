@@ -59,14 +59,14 @@ function walkNodes(node: Record<string, unknown>, prefix: string, found: SchemaN
 export function pruneBranch(schema: Schema, branchKey: string, name: string): Schema {
   const branch = schema[branchKey] as unknown;
   if (!isObject(branch)) {
-    throw new ConfigError(`pruneBranch(): the schema has no "${branchKey}" node to prune.`);
+    throw new ConfigError(`The schema has no "${branchKey}" branch to select from.`);
   }
 
   const selected = branch[name];
   if (!isObject(selected)) {
     const declared = Object.keys(branch);
     throw new ConfigError(
-      `pruneBranch(): "${branchKey}" declares no "${name}". Declared: ${declared.join(", ") || "nothing"}.`
+      `Unknown ${branchKey} "${name}". The schema declares: ${declared.join(", ") || "nothing"}.`
     );
   }
 

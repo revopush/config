@@ -102,10 +102,13 @@ describe("pruneBranch", () => {
   });
 
   it("names what is declared when the selection is not one of them", () => {
-    expect(() => pruneBranch(branched, "platform", "gcp")).to.throw(ConfigError, /Declared: saas, azure/);
+    expect(() => pruneBranch(branched, "platform", "gcp")).to.throw(
+      ConfigError,
+      /Unknown platform "gcp"\. The schema declares: saas, azure\./
+    );
   });
 
   it("refuses a branch key the schema does not have", () => {
-    expect(() => pruneBranch(branched, "cloud", "saas")).to.throw(ConfigError, /no "cloud" node/);
+    expect(() => pruneBranch(branched, "cloud", "saas")).to.throw(ConfigError, /no "cloud" branch/);
   });
 });
