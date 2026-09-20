@@ -1,6 +1,6 @@
 {
   "name": "@revopush/config-azure-keyvault",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Azure Key Vault secret provider for @revopush/config.",
   "license": "MIT",
   "repository": {
